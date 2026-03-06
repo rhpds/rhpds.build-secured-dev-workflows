@@ -31,7 +31,7 @@
 
 - name: Copy Nginx webhook proxy pass config to host
   ansible.builtin.copy:
-    src: files/nginx-webhook-proxy-pass.conf
+    src: templates/nginx-webhook-proxy-pass.conf.j2
     dest: /tmp/nginx-webhook-proxy-pass.conf
   delegate_to: bastion
 
