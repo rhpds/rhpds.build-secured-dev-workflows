@@ -52,6 +52,18 @@
   - r_nginx_pod.resources[0].status.phase is defined
   - r_nginx_pod.resources[0].status.phase == "Running"
 
+- name: Get cluster DNS service IP
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Service
+    name: dns-default
+    namespace: openshift-dns
+  register: r_dns_service
+
+- name: Set cluster DNS IP fact
+  ansible.builtin.set_fact:
+    _cluster_dns_ip: "{{ r_dns_service.resources[0].spec.clusterIP }}"
+
 - name: Copy Nginx webhook proxy pass to container
   shell: |
     NGINX_POD={{ r_nginx_pod.resources[0].metadata.name }}
