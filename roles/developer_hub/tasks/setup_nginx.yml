@@ -42,7 +42,7 @@
     _cluster_dns_ip: "{{ r_dns_service.resources[0].spec.clusterIP }}"
 
 - name: Copy Nginx webhook proxy pass config to host
-  ansible.builtin.copy:
+  ansible.builtin.template:
     src: templates/nginx-webhook-proxy-pass.conf.j2
     dest: /tmp/nginx-webhook-proxy-pass.conf
   delegate_to: bastion
