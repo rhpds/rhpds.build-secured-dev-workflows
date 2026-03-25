@@ -28,23 +28,23 @@ echo "✓ TPA Realm imported successfully"
 
 # Step 2.1: Configure the Client Secret
 echo "Step 2.1: Configuring Client Secret..."
-envsubst < ~/lab-assets/tpa-cli-credentials.yml | oc apply -n {{ lab_scripts_namespace }} -f -
+envsubst < ~/lab-assets/tpa-cli-credentials.yml | oc apply -n {{ lab_scripts_tpa_namespace }} -f -
 echo "✓ Client secret configured"
 
 # Step 2.2: Deploy RHTPA Instance
 echo "Step 2.2: Deploying RHTPA Instance..."
-envsubst < ~/lab-assets/tpa-instance.yml | oc apply -n {{ lab_scripts_namespace }} -f -
+envsubst < ~/lab-assets/tpa-instance.yml | oc apply -n {{ lab_scripts_tpa_namespace }} -f -
 
 # Wait for RHTPA server pod to be ready
 echo "Waiting for RHTPA server to be ready..."
-oc wait --for=condition=ready pod -l app.kubernetes.io/component=server -n {{ lab_scripts_namespace }} --timeout=600s
+oc wait --for=condition=ready pod -l app.kubernetes.io/component=server -n {{ lab_scripts_tpa_namespace }} --timeout=600s
 echo "✓ RHTPA server is ready"
 
 echo ""
 echo "========================================="
 echo "RHTPA installation complete!"
 echo "========================================="
-echo "Console: https://server-{{ lab_scripts_namespace }}.${CLUSTER_DOMAIN}"
+echo "Console: https://server-{{ lab_scripts_tpa_namespace }}.${CLUSTER_DOMAIN}"
 echo "Username: ${TPA_ADMIN_USERNAME}"
 echo "Password: ${TPA_ADMIN_PASSWORD}"
 echo ""

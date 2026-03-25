@@ -7,8 +7,8 @@
 set -e
 
 # Default SBOM configuration
-SBOM_FILE="{{ lab_scripts_example_sbom_path }}"
-SBOM_ID="{{ lab_scripts_sbom_id }}"
+SBOM_FILE="{{ lab_scripts_tpa_example_sbom_path }}"
+SBOM_ID="{{ lab_scripts_tpa_sbom_id }}"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -31,7 +31,7 @@ export TPA_REALM="{{ lab_scripts_tpa_keycloak_realm }}"
 export TPA_CLI_CLIENT_SECRET=$(oc get keycloakrealmimport ${TPA_REALM} -n {{ lab_scripts_keycloak_namespace }} -o jsonpath='{.spec.realm.clients[?(@.clientId=="cli")].secret}')
 
 # Step 3.1: Ingest the SBOM into RHTPA
-export TPA_SERVER_URL="https://$(oc get route -l app.kubernetes.io/component=server -n {{ lab_scripts_namespace }} -o json | jq -r '.items[0].spec.host')"
+export TPA_SERVER_URL="https://$(oc get route -l app.kubernetes.io/component=server -n {{ lab_scripts_tpa_namespace }} -o json | jq -r '.items[0].spec.host')"
 
 # Ensure TPA endpoint is up before pushing SBOM
 echo "Checking if TPA endpoint is ready..."
