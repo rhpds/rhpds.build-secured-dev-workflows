@@ -1,0 +1,17 @@
+---
+# Namespace configuration
+lab_scripts_namespace: trusted-profile-analyzer
+lab_scripts_keycloak_namespace: sso
+
+# Script output directory
+lab_scripts_output_dir: ~/lab-assets
+
+# TPA Keycloak configuration
+lab_scripts_tpa_keycloak_realm: tpa
+lab_scripts_tpa_admin_username: "tpa-admin"
+lab_scripts_tpa_admin_password: "openshift"
+lab_scripts_tpa_cli_client_secret: "5460cc91-4e20-4edd-881c-b15b169f8a79"
+
+# SBOM configuration
+lab_scripts_example_sbom_path: ~/lab-assets/example-sbom.json
+lab_scripts_sbom_id: test-sbom

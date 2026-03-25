@@ -1,0 +1,32 @@
+---
+- name: Generate install-rhtpa.sh script
+  ansible.builtin.template:
+    src: install-rhtpa.sh.j2
+    dest: "{{ lab_scripts_output_dir }}/install-rhtpa.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate upload-sbom.sh script
+  ansible.builtin.template:
+    src: upload-sbom.sh.j2
+    dest: "{{ lab_scripts_output_dir }}/upload-sbom.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Display script locations
+  ansible.builtin.debug:
+    msg:
+    - "ADS RHTPA scripts generated in ~/lab-assets:"
+    - "  install-rhtpa.sh"
+    - "  upload-sbom.sh"
+    - ""
+    - "Scripts reference existing YAML files in ~/lab-assets:"
+    - "  keycloak-tpa-realm.yml"
+    - "  tpa-cli-credentials.yml"
+    - "  tpa-instance.yml"
+
+- name: Save user information
+  agnosticd.core.agnosticd_user_info:
+    data:
+      rhtpa_install_script: "{{ lab_scripts_output_dir }}/install-rhtpa.sh"
+      rhtpa_upload_script: "{{ lab_scripts_output_dir }}/upload-sbom.sh"
