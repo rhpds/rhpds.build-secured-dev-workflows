@@ -24,11 +24,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Initialize environment variables
-CLUSTER_DOMAIN=$(oc get ingress.config.openshift.io/cluster -o jsonpath='{.spec.domain}')
+CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
-export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 export TPA_REALM="{{ lab_scripts_tpa_keycloak_realm }}"
-export TPA_CLI_CLIENT_SECRET=$(oc get keycloakrealmimport ${TPA_REALM} -n {{ lab_scripts_keycloak_namespace }} -o jsonpath='{.spec.realm.clients[?(@.clientId=="cli")].secret}')
+export TPA_CLI_CLIENT_SECRET="{{ lab_scripts_tpa_cli_client_secret }}"
+export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 # Step 3.1: Ingest the SBOM into RHTPA
 export TPA_SERVER_URL="https://$(oc get route -l app.kubernetes.io/component=server -n {{ lab_scripts_tpa_namespace }} -o json | jq -r '.items[0].spec.host')"
