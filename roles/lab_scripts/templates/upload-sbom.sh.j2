@@ -7,7 +7,7 @@
 set -e
 
 # Default SBOM configuration
-SBOM_FILE="{{ lab_scripts_tpa_example_sbom_path }}"
+SBOM_FILE=$(eval echo "{{ lab_scripts_tpa_example_sbom_path }}")
 SBOM_ID="{{ lab_scripts_tpa_sbom_id }}"
 
 # Parse arguments
