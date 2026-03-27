@@ -16,7 +16,7 @@ set -e
 APP_CI_NAMESPACE="{{ lab_scripts_app_ci_namespace }}"
 TEST_SA="chains-signing-image-tester"
 REGISTRY_SECRET="tssc-image-registry-auth"
-TEST_TASK_FILE="$HOME/lab-assets/example-image-sign.yml"
+TEST_TASK_FILE=$(eval echo "~/lab-assets/example-image-sign.yml")
 
 echo "========================================="
 echo "RHTAS Image Signing Smoke Test"
