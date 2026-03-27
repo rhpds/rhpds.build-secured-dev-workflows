@@ -6,22 +6,9 @@
 
 set -e
 
-# Default SBOM configuration
+# SBOM configuration
 SBOM_FILE=$(eval echo "{{ lab_scripts_tpa_example_sbom_path }}")
 SBOM_ID="{{ lab_scripts_tpa_sbom_id }}"
-
-# Parse arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -f|--file) SBOM_FILE="$2"; shift 2 ;;
-        -i|--id) SBOM_ID="$2"; shift 2 ;;
-        -h|--help)
-            echo "Usage: $0 [-f FILE] [-i ID]"
-            exit 0
-            ;;
-        *) echo "Unknown option: $1"; exit 1 ;;
-    esac
-done
 
 # Initialize environment variables
 CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
