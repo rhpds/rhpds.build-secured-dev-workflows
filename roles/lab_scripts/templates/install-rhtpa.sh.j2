@@ -9,35 +9,35 @@ set -e
 # Initialize environment variables
 CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
-export TPA_REALM="{{ lab_scripts_tpa_keycloak_realm }}"
-export TPA_CLI_CLIENT_SECRET="{{ lab_scripts_tpa_cli_client_secret }}"
-export TPA_ADMIN_USERNAME="{{ lab_scripts_tpa_admin_username }}"
-export TPA_ADMIN_PASSWORD="{{ lab_scripts_tpa_admin_password }}"
+export TPA_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_keycloak_realm }}"
+export TPA_CLI_CLIENT_SECRET="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_cli_client_secret }}"
+export TPA_ADMIN_USERNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_admin_username }}"
+export TPA_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_admin_password }}"
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 echo "Installing RHTPA..."
 
 # Step 1.1: Import the TPA Realm
 echo "Step 1.1: Importing TPA Realm..."
-envsubst '${TPA_REALM} ${TPA_CLI_CLIENT_SECRET} ${TPA_ADMIN_USERNAME} ${TPA_ADMIN_PASSWORD}' < ~/lab-assets/keycloak-tpa-realm.yml | oc apply -n {{ lab_scripts_keycloak_namespace }} -f -
+envsubst '${TPA_REALM} ${TPA_CLI_CLIENT_SECRET} ${TPA_ADMIN_USERNAME} ${TPA_ADMIN_PASSWORD}' < ~/lab-assets/keycloak-tpa-realm.yml | oc apply -n {{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }} -f -
 
 # Wait for TPA Realm to install successfully
 echo "Waiting for TPA Realm import to complete..."
-oc wait --for=condition=Done keycloakrealmimport/${TPA_REALM} -n {{ lab_scripts_keycloak_namespace }} --timeout=300s
+oc wait --for=condition=Done keycloakrealmimport/${TPA_REALM} -n {{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }} --timeout=300s
 echo "✓ TPA Realm imported successfully"
 
 # Step 2.1: Configure the Client Secret
 echo "Step 2.1: Configuring Client Secret..."
-envsubst < ~/lab-assets/tpa-cli-credentials.yml | oc apply -n {{ lab_scripts_tpa_namespace }} -f -
+envsubst < ~/lab-assets/tpa-cli-credentials.yml | oc apply -n {{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_namespace }} -f -
 echo "✓ Client secret configured"
 
 # Step 2.2: Deploy RHTPA Instance
 echo "Step 2.2: Deploying RHTPA Instance..."
-envsubst < ~/lab-assets/tpa-instance.yml | oc apply -n {{ lab_scripts_tpa_namespace }} -f -
+envsubst < ~/lab-assets/tpa-instance.yml | oc apply -n {{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_namespace }} -f -
 
 # Wait for RHTPA server endpoint to be ready
 echo "Waiting for RHTPA server to be ready..."
-TPA_SERVER_URL="https://server-{{ lab_scripts_tpa_namespace }}.${CLUSTER_DOMAIN}"
+TPA_SERVER_URL="https://server-{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_namespace }}.${CLUSTER_DOMAIN}"
 TIMEOUT=600
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
@@ -58,7 +58,7 @@ echo ""
 echo "========================================="
 echo "RHTPA installation complete!"
 echo "========================================="
-echo "Console: https://server-{{ lab_scripts_tpa_namespace }}.${CLUSTER_DOMAIN}"
+echo "Console: https://server-{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_namespace }}.${CLUSTER_DOMAIN}"
 echo "Username: ${TPA_ADMIN_USERNAME}"
 echo "Password: ${TPA_ADMIN_PASSWORD}"
 echo ""

@@ -15,15 +15,15 @@ CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 # Namespace variables
-KEYCLOAK_NAMESPACE="{{ lab_scripts_keycloak_namespace }}"
+KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
 
 # SSO Configuration
-SSO_REALM="{{ lab_scripts_tas_sso_realm }}"
-DEVELOPER_USERNAME="{{ lab_scripts_developer_username }}"
-DEVELOPER_EMAIL="{{ lab_scripts_developer_email }}"
-DEVELOPER_FIRSTNAME="{{ lab_scripts_developer_firstname }}"
-DEVELOPER_LASTNAME="{{ lab_scripts_developer_lastname }}"
-DEVELOPER_PASSWORD="{{ lab_scripts_developer_password }}"
+SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
+DEVELOPER_USERNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_developer_username }}"
+DEVELOPER_EMAIL="{{ rhpds_build_secured_dev_workflows_lab_scripts_developer_email }}"
+DEVELOPER_FIRSTNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_developer_firstname }}"
+DEVELOPER_LASTNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_developer_lastname }}"
+DEVELOPER_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_developer_password }}"
 
 echo "========================================="
 echo "Creating Developer User in RHBK"

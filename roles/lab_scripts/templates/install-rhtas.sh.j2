@@ -17,14 +17,14 @@ CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 # Namespace variables
-KEYCLOAK_NAMESPACE="{{ lab_scripts_keycloak_namespace }}"
-TAS_NAMESPACE="{{ lab_scripts_tas_namespace }}"
-PIPELINES_NAMESPACE="{{ lab_scripts_pipelines_namespace }}"
+KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
+TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
+PIPELINES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_pipelines_namespace }}"
 
 # TAS Configuration
-TAS_CHAINS_REALM="{{ lab_scripts_tas_chains_realm }}"
-TAS_SSO_REALM="{{ lab_scripts_tas_sso_realm }}"
-TAS_CLIENT_ID="{{ lab_scripts_tas_client_id }}"
+TAS_CHAINS_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_chains_realm }}"
+TAS_SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
+TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
 
 echo "========================================="
 echo "Installing RHTAS"

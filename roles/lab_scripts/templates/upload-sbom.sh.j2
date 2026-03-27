@@ -7,18 +7,18 @@
 set -e
 
 # SBOM configuration
-SBOM_FILE=$(eval echo "{{ lab_scripts_tpa_example_sbom_path }}")
-SBOM_ID="{{ lab_scripts_tpa_sbom_id }}"
+SBOM_FILE=$(eval echo "{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_example_sbom_path }}")
+SBOM_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_sbom_id }}"
 
 # Initialize environment variables
 CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
-export TPA_REALM="{{ lab_scripts_tpa_keycloak_realm }}"
-export TPA_CLI_CLIENT_SECRET="{{ lab_scripts_tpa_cli_client_secret }}"
+export TPA_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_keycloak_realm }}"
+export TPA_CLI_CLIENT_SECRET="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_cli_client_secret }}"
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 # Step 3.1: Ingest the SBOM into RHTPA
-export TPA_SERVER_URL="https://$(oc get route -l app.kubernetes.io/component=server -n {{ lab_scripts_tpa_namespace }} -o json | jq -r '.items[0].spec.host')"
+export TPA_SERVER_URL="https://$(oc get route -l app.kubernetes.io/component=server -n {{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_namespace }} -o json | jq -r '.items[0].spec.host')"
 
 # Ensure TPA endpoint is up before pushing SBOM
 echo "Checking if TPA endpoint is ready..."

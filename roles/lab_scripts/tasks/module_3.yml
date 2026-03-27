@@ -4,21 +4,21 @@
 - name: Generate create-developer-user.sh script
   ansible.builtin.template:
     src: create-developer-user.sh.j2
-    dest: "{{ lab_scripts_output_dir }}/create-developer-user.sh"
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-developer-user.sh"
     mode: '0755'
   delegate_to: bastion
 
 - name: Generate create-devspaces-configmap.sh script
   ansible.builtin.template:
     src: create-devspaces-configmap.sh.j2
-    dest: "{{ lab_scripts_output_dir }}/create-devspaces-configmap.sh"
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-devspaces-configmap.sh"
     mode: '0755'
   delegate_to: bastion
 
 - name: Generate create-pipeline-secrets.sh script
   ansible.builtin.template:
     src: create-pipeline-secrets.sh.j2
-    dest: "{{ lab_scripts_output_dir }}/create-pipeline-secrets.sh"
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-pipeline-secrets.sh"
     mode: '0755'
   delegate_to: bastion
 
@@ -33,6 +33,6 @@
 - name: Save Module 3 script information
   agnosticd.core.agnosticd_user_info:
     data:
-      rhdh_create_user_script: "{{ lab_scripts_output_dir }}/create-developer-user.sh"
-      rhdh_devspaces_configmap_script: "{{ lab_scripts_output_dir }}/create-devspaces-configmap.sh"
-      rhdh_pipeline_secrets_script: "{{ lab_scripts_output_dir }}/create-pipeline-secrets.sh"
+      rhdh_create_user_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-developer-user.sh"
+      rhdh_devspaces_configmap_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-devspaces-configmap.sh"
+      rhdh_pipeline_secrets_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-pipeline-secrets.sh"

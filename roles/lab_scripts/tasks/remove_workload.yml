@@ -1,9 +1,9 @@
 ---
 - name: Remove script output directory
   ansible.builtin.file:
-    path: "{{ lab_scripts_output_dir }}"
+    path: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}"
     state: absent
 
 - name: Display removal message
   ansible.builtin.debug:
-    msg: "RHTPA scripts directory removed: {{ lab_scripts_output_dir }}"
+    msg: "RHTPA scripts directory removed: {{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}"

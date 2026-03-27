@@ -4,14 +4,14 @@
 - name: Generate install-rhtas.sh script
   ansible.builtin.template:
     src: install-rhtas.sh.j2
-    dest: "{{ lab_scripts_output_dir }}/install-rhtas.sh"
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/install-rhtas.sh"
     mode: '0755'
   delegate_to: bastion
 
 - name: Generate test-image-signing.sh script
   ansible.builtin.template:
     src: test-image-signing.sh.j2
-    dest: "{{ lab_scripts_output_dir }}/test-image-signing.sh"
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/test-image-signing.sh"
     mode: '0755'
   delegate_to: bastion
 
@@ -32,5 +32,5 @@
 - name: Save RHTAS script information
   agnosticd.core.agnosticd_user_info:
     data:
-      rhtas_install_script: "{{ lab_scripts_output_dir }}/install-rhtas.sh"
-      rhtas_test_script: "{{ lab_scripts_output_dir }}/test-image-signing.sh"
+      rhtas_install_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/install-rhtas.sh"
+      rhtas_test_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/test-image-signing.sh"

@@ -1,34 +1,34 @@
 ---
 # Namespace configuration
-lab_scripts_tpa_namespace: trusted-profile-analyzer
-lab_scripts_tas_namespace: tssc-tas
-lab_scripts_keycloak_namespace: sso
-lab_scripts_pipelines_namespace: openshift-pipelines
-lab_scripts_app_ci_namespace: tssc-app-ci
-lab_scripts_devspaces_namespace: openshift-devspaces
-lab_scripts_gitlab_namespace: gitlab
+rhpds_build_secured_dev_workflows_lab_scripts_tpa_namespace: trusted-profile-analyzer
+rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace: tssc-tas
+rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace: sso
+rhpds_build_secured_dev_workflows_lab_scripts_pipelines_namespace: openshift-pipelines
+rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace: tssc-app-ci
+rhpds_build_secured_dev_workflows_lab_scripts_devspaces_namespace: openshift-devspaces
+rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace: gitlab
 
 # Script output directory
-lab_scripts_output_dir: ~/lab-assets
+rhpds_build_secured_dev_workflows_lab_scripts_output_dir: ~/lab-assets
 
 # Module 1: TPA Configuration
-lab_scripts_tpa_keycloak_realm: tpa
-lab_scripts_tpa_admin_username: "tpa-admin"
-lab_scripts_tpa_admin_password: "openshift"
-lab_scripts_tpa_cli_client_secret: "5460cc91-4e20-4edd-881c-b15b169f8a79"
+rhpds_build_secured_dev_workflows_lab_scripts_tpa_keycloak_realm: tpa
+rhpds_build_secured_dev_workflows_lab_scripts_tpa_admin_username: "tpa-admin"
+rhpds_build_secured_dev_workflows_lab_scripts_tpa_admin_password: "openshift"
+rhpds_build_secured_dev_workflows_lab_scripts_tpa_cli_client_secret: "5460cc91-4e20-4edd-881c-b15b169f8a79"
 
 # SBOM configuration
-lab_scripts_tpa_example_sbom_path: ~/lab-assets/example-sbom.json
-lab_scripts_tpa_sbom_id: test-sbom
+rhpds_build_secured_dev_workflows_lab_scripts_tpa_example_sbom_path: ~/lab-assets/example-sbom.json
+rhpds_build_secured_dev_workflows_lab_scripts_tpa_sbom_id: test-sbom
 
 # Module 2: TAS Configuration
-lab_scripts_tas_chains_realm: tas-chains
-lab_scripts_tas_sso_realm: sso
-lab_scripts_tas_client_id: trusted-artifact-signer
+rhpds_build_secured_dev_workflows_lab_scripts_tas_chains_realm: tas-chains
+rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm: sso
+rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id: trusted-artifact-signer
 
 # Module 3: Developer User Configuration
-lab_scripts_developer_username: user1
-lab_scripts_developer_email: user1@demo.redhat.com
-lab_scripts_developer_firstname: User1
-lab_scripts_developer_lastname: Demo
-lab_scripts_developer_password: xtswmPuS
+rhpds_build_secured_dev_workflows_lab_scripts_developer_username: user1
+rhpds_build_secured_dev_workflows_lab_scripts_developer_email: user1@demo.redhat.com
+rhpds_build_secured_dev_workflows_lab_scripts_developer_firstname: User1
+rhpds_build_secured_dev_workflows_lab_scripts_developer_lastname: Demo
+rhpds_build_secured_dev_workflows_lab_scripts_developer_password: xtswmPuS
