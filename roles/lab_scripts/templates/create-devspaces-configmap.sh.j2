@@ -1,0 +1,81 @@
+#!/bin/bash
+#
+# Script: create-devspaces-configmap.sh
+# Purpose: Create Dev Spaces ConfigMap - Showroom Module 3 Step 4.3
+#
+# This script automates:
+# - Step 4.3: Create the tas-git-config ConfigMap for Dev Spaces
+
+set -e
+
+# Initialize environment variables
+CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+
+# Namespace variables
+DEVSPACES_NAMESPACE="{{ lab_scripts_devspaces_namespace }}"
+TAS_NAMESPACE="{{ lab_scripts_tas_namespace }}"
+
+# TAS Configuration
+TAS_CLIENT_ID="{{ lab_scripts_tas_client_id }}"
+SSO_REALM="{{ lab_scripts_tas_sso_realm }}"
+
+echo "========================================="
+echo "Creating Dev Spaces ConfigMap"
+echo "========================================="
+echo ""
+
+# Get TAS service URLs
+echo "Retrieving TAS service URLs..."
+FULCIO_URL="https://fulcio-server-${TAS_NAMESPACE}.${CLUSTER_DOMAIN}"
+REKOR_URL="https://rekor-server-${TAS_NAMESPACE}.${CLUSTER_DOMAIN}"
+ISSUER_URL="https://sso.${CLUSTER_DOMAIN}/realms/${SSO_REALM}"
+
+echo "  Fulcio URL: ${FULCIO_URL}"
+echo "  Rekor URL: ${REKOR_URL}"
+echo "  Issuer URL: ${ISSUER_URL}"
+echo "  Client ID: ${TAS_CLIENT_ID}"
+echo ""
+
+#######################################
+# Step 4.3: Create ConfigMap
+#######################################
+echo "Step 4.3: Creating tas-git-config ConfigMap..."
+echo "-----------------------------------------------"
+
+# Create ConfigMap
+cat <<EOF | oc apply -n ${DEVSPACES_NAMESPACE} -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tas-git-config
+  annotations:
+    controller.devfile.io/mount-as: env
+  labels:
+    app.kubernetes.io/part-of: che.eclipse.org
+    app.kubernetes.io/component: workspaces-config
+data:
+  TAS_FULCIO_URL: "${FULCIO_URL}"
+  TAS_REKOR_URL: "${REKOR_URL}"
+  TAS_ISSUER_URL: "${ISSUER_URL}"
+  TAS_CLIENT_ID: "${TAS_CLIENT_ID}"
+EOF
+
+echo "✓ ConfigMap created in namespace: ${DEVSPACES_NAMESPACE}"
+echo ""
+
+echo "========================================="
+echo "Dev Spaces ConfigMap Creation Complete!"
+echo "========================================="
+echo ""
+echo "ConfigMap Details:"
+echo "  Name: tas-git-config"
+echo "  Namespace: ${DEVSPACES_NAMESPACE}"
+echo ""
+echo "Environment variables injected into Dev Spaces workspaces:"
+echo "  TAS_FULCIO_URL: ${FULCIO_URL}"
+echo "  TAS_REKOR_URL: ${REKOR_URL}"
+echo "  TAS_ISSUER_URL: ${ISSUER_URL}"
+echo "  TAS_CLIENT_ID: ${TAS_CLIENT_ID}"
+echo ""
+echo "These values enable gitsign for OIDC-based Git commit signing."
+echo ""

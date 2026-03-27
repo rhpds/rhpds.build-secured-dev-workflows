@@ -5,6 +5,7 @@ lab_scripts_tas_namespace: tssc-tas
 lab_scripts_keycloak_namespace: sso
 lab_scripts_pipelines_namespace: openshift-pipelines
 lab_scripts_app_ci_namespace: tssc-app-ci
+lab_scripts_devspaces_namespace: openshift-devspaces
 
 # Script output directory
 lab_scripts_output_dir: ~/lab-assets

@@ -1,0 +1,175 @@
+#!/bin/bash
+#
+# Script: create-developer-user.sh
+# Purpose: Create Developer User in RHBK - Showroom Module 3 Step 1
+#
+# This script automates:
+# - Step 1.2: Create the Developer User (user1)
+# - Step 1.3: Assign Group Membership (tssc, users)
+# - Step 1.4: Set User Credentials
+
+set -e
+
+# Initialize environment variables
+CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
+
+# Namespace variables
+KEYCLOAK_NAMESPACE="{{ lab_scripts_keycloak_namespace }}"
+
+# SSO Configuration
+SSO_REALM="{{ lab_scripts_tas_sso_realm }}"
+DEVELOPER_USERNAME="user1"
+DEVELOPER_EMAIL="user1@demo.redhat.com"
+DEVELOPER_FIRSTNAME="User1"
+DEVELOPER_LASTNAME="Demo"
+DEVELOPER_PASSWORD="xtswmPuS"
+
+echo "========================================="
+echo "Creating Developer User in RHBK"
+echo "========================================="
+echo ""
+
+# Get Keycloak admin credentials
+echo "Retrieving Keycloak admin credentials..."
+KEYCLOAK_ADMIN_USER=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.username}' | base64 -d)
+KEYCLOAK_ADMIN_PASSWORD=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)
+
+# Get admin access token
+echo "Authenticating with Keycloak..."
+ADMIN_TOKEN=$(curl -s -X POST "${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "client_id=admin-cli" \
+  -d "username=${KEYCLOAK_ADMIN_USER}" \
+  -d "password=${KEYCLOAK_ADMIN_PASSWORD}" \
+  -d "grant_type=password" | jq -r '.access_token')
+
+if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" == "null" ]; then
+    echo "Error: Failed to authenticate with Keycloak"
+    exit 1
+fi
+echo "✓ Authenticated with Keycloak"
+echo ""
+
+#######################################
+# Step 1.2: Create the Developer User
+#######################################
+echo "Step 1.2: Creating developer user (${DEVELOPER_USERNAME})..."
+echo "------------------------------------------------------------"
+
+# Check if user already exists
+USER_EXISTS=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users?username=${DEVELOPER_USERNAME}" | jq -r '.[0].id // empty')
+
+if [ -z "$USER_EXISTS" ]; then
+    # Create user
+    curl -s -X POST "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"username\": \"${DEVELOPER_USERNAME}\",
+        \"email\": \"${DEVELOPER_EMAIL}\",
+        \"firstName\": \"${DEVELOPER_FIRSTNAME}\",
+        \"lastName\": \"${DEVELOPER_LASTNAME}\",
+        \"emailVerified\": true,
+        \"enabled\": true
+      }"
+    echo "✓ Created developer user: ${DEVELOPER_USERNAME}"
+
+    # Get the newly created user ID
+    sleep 2
+    USER_ID=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users?username=${DEVELOPER_USERNAME}" | jq -r '.[0].id')
+else
+    echo "✓ Developer user already exists: ${DEVELOPER_USERNAME}"
+    USER_ID=$USER_EXISTS
+fi
+
+if [ -z "$USER_ID" ]; then
+    echo "Error: Failed to get user ID"
+    exit 1
+fi
+echo ""
+
+#######################################
+# Step 1.3: Assign Group Membership
+#######################################
+echo "Step 1.3: Assigning group membership..."
+echo "----------------------------------------"
+
+# Get group IDs
+TSSC_GROUP_ID=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/groups?search=tssc" | jq -r '.[0].id // empty')
+
+USERS_GROUP_ID=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/groups?search=users" | jq -r '.[0].id // empty')
+
+# Join tssc group
+if [ -n "$TSSC_GROUP_ID" ]; then
+    # Check if already member
+    IS_MEMBER=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users/${USER_ID}/groups" | jq -r ".[] | select(.id==\"${TSSC_GROUP_ID}\") | .id")
+
+    if [ -z "$IS_MEMBER" ]; then
+        curl -s -X PUT "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users/${USER_ID}/groups/${TSSC_GROUP_ID}" \
+          -H "Authorization: Bearer ${ADMIN_TOKEN}"
+        echo "✓ Added user to group: tssc"
+    else
+        echo "✓ User already member of group: tssc"
+    fi
+else
+    echo "⚠ Warning: Group 'tssc' not found"
+fi
+
+# Join users group
+if [ -n "$USERS_GROUP_ID" ]; then
+    # Check if already member
+    IS_MEMBER=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users/${USER_ID}/groups" | jq -r ".[] | select(.id==\"${USERS_GROUP_ID}\") | .id")
+
+    if [ -z "$IS_MEMBER" ]; then
+        curl -s -X PUT "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users/${USER_ID}/groups/${USERS_GROUP_ID}" \
+          -H "Authorization: Bearer ${ADMIN_TOKEN}"
+        echo "✓ Added user to group: users"
+    else
+        echo "✓ User already member of group: users"
+    fi
+else
+    echo "⚠ Warning: Group 'users' not found"
+fi
+echo ""
+
+#######################################
+# Step 1.4: Set User Credentials
+#######################################
+echo "Step 1.4: Setting user credentials..."
+echo "--------------------------------------"
+
+# Set password
+curl -s -X PUT "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users/${USER_ID}/reset-password" \
+  -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"type\": \"password\",
+    \"value\": \"${DEVELOPER_PASSWORD}\",
+    \"temporary\": false
+  }"
+echo "✓ Password set for user: ${DEVELOPER_USERNAME}"
+echo ""
+
+echo "========================================="
+echo "Developer User Creation Complete!"
+echo "========================================="
+echo ""
+echo "User Details:"
+echo "  Username: ${DEVELOPER_USERNAME}"
+echo "  Password: ${DEVELOPER_PASSWORD}"
+echo "  Email: ${DEVELOPER_EMAIL}"
+echo "  Email Verified: Yes"
+echo "  Groups: tssc, users"
+echo ""
+echo "The user can now authenticate across:"
+echo "  - OpenShift Console"
+echo "  - Red Hat Developer Hub (RHDH)"
+echo "  - OpenShift Dev Spaces"
+echo ""

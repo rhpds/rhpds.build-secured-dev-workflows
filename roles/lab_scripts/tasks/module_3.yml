@@ -1,0 +1,38 @@
+---
+# Module 3: RHDH Developer Workflow Configuration Tasks
+
+- name: Generate create-developer-user.sh script
+  ansible.builtin.template:
+    src: create-developer-user.sh.j2
+    dest: "{{ lab_scripts_output_dir }}/create-developer-user.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate create-devspaces-configmap.sh script
+  ansible.builtin.template:
+    src: create-devspaces-configmap.sh.j2
+    dest: "{{ lab_scripts_output_dir }}/create-devspaces-configmap.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate create-pipeline-secrets.sh script
+  ansible.builtin.template:
+    src: create-pipeline-secrets.sh.j2
+    dest: "{{ lab_scripts_output_dir }}/create-pipeline-secrets.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Display Module 3 script locations
+  ansible.builtin.debug:
+    msg:
+    - "RHDH Developer Workflow scripts generated in ~/lab-assets:"
+    - "  create-developer-user.sh"
+    - "  create-devspaces-configmap.sh"
+    - "  create-pipeline-secrets.sh"
+
+- name: Save Module 3 script information
+  agnosticd.core.agnosticd_user_info:
+    data:
+      rhdh_create_user_script: "{{ lab_scripts_output_dir }}/create-developer-user.sh"
+      rhdh_devspaces_configmap_script: "{{ lab_scripts_output_dir }}/create-devspaces-configmap.sh"
+      rhdh_pipeline_secrets_script: "{{ lab_scripts_output_dir }}/create-pipeline-secrets.sh"
