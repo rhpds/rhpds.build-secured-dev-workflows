@@ -19,11 +19,11 @@ KEYCLOAK_NAMESPACE="{{ lab_scripts_keycloak_namespace }}"
 
 # SSO Configuration
 SSO_REALM="{{ lab_scripts_tas_sso_realm }}"
-DEVELOPER_USERNAME="user1"
-DEVELOPER_EMAIL="user1@demo.redhat.com"
-DEVELOPER_FIRSTNAME="User1"
-DEVELOPER_LASTNAME="Demo"
-DEVELOPER_PASSWORD="xtswmPuS"
+DEVELOPER_USERNAME="{{ lab_scripts_developer_username }}"
+DEVELOPER_EMAIL="{{ lab_scripts_developer_email }}"
+DEVELOPER_FIRSTNAME="{{ lab_scripts_developer_firstname }}"
+DEVELOPER_LASTNAME="{{ lab_scripts_developer_lastname }}"
+DEVELOPER_PASSWORD="{{ lab_scripts_developer_password }}"
 
 echo "========================================="
 echo "Creating Developer User in RHBK"

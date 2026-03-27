@@ -24,3 +24,10 @@ lab_scripts_tpa_sbom_id: test-sbom
 lab_scripts_tas_chains_realm: tas-chains
 lab_scripts_tas_sso_realm: sso
 lab_scripts_tas_client_id: trusted-artifact-signer
+
+# Module 3: Developer User Configuration
+lab_scripts_developer_username: user1
+lab_scripts_developer_email: user1@demo.redhat.com
+lab_scripts_developer_firstname: User1
+lab_scripts_developer_lastname: Demo
+lab_scripts_developer_password: xtswmPuS
