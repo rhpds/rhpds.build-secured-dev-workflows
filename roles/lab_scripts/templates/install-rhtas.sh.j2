@@ -171,8 +171,9 @@ echo "Step 3.1: Applying RHTAS Instance CR..."
 export TAS_CHAINS_CLIENT_ID=${TAS_CLIENT_ID}
 export TAS_CHAINS_REALM=${TAS_CHAINS_REALM}
 export TAS_SSO_REALM=${TAS_SSO_REALM}
+export KEYCLOAK_URL
 
-envsubst < ~/lab-assets/tas-instance.yml | oc apply -n ${TAS_NAMESPACE} -f -
+envsubst < $(eval echo "~/lab-assets/tas-instance.yml") | oc apply -n ${TAS_NAMESPACE} -f -
 echo "✓ RHTAS Instance CR applied"
 
 # Step 3.2: Wait for tuf pod to be Running
@@ -218,12 +219,12 @@ echo "✓ Client secret retrieved"
 # Step 4.2: Create OIDC info secret
 echo "Step 4.2: Creating OIDC info secret..."
 export TAS_CHAINS_CLIENT_SECRET
-envsubst < ~/lab-assets/oidc-info-secret.yml | oc apply -n ${PIPELINES_NAMESPACE} -f -
+envsubst < $(eval echo "~/lab-assets/oidc-info-secret.yml") | oc apply -n ${PIPELINES_NAMESPACE} -f -
 echo "✓ OIDC info secret created"
 
 # Step 4.3: Deploy OIDC refresher app
 echo "Step 4.3: Deploying OIDC refresher app..."
-oc apply -f ~/lab-assets/oidc-refresher-app.yml -n ${PIPELINES_NAMESPACE}
+oc apply -f $(eval echo "~/lab-assets/oidc-refresher-app.yml") -n ${PIPELINES_NAMESPACE}
 echo "✓ OIDC refresher app deployed"
 
 # Step 4.4: Wait for refresher pod to be Running
@@ -253,7 +254,7 @@ echo "Step 5: Configure Tekton Chains"
 echo "--------------------------------"
 
 echo "Step 5.1: Patching Tekton configuration..."
-oc patch tektonconfig config -n ${PIPELINES_NAMESPACE} --type=merge --patch "$(cat ~/lab-assets/tekton-chains-patch.yml)"
+oc patch tektonconfig config -n ${PIPELINES_NAMESPACE} --type=merge --patch "$(cat $(eval echo "~/lab-assets/tekton-chains-patch.yml"))"
 echo "✓ Tekton Chains configured"
 echo ""
 
