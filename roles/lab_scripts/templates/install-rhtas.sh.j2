@@ -14,7 +14,7 @@ set -e
 
 # Initialize environment variables
 CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
-KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
+export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 # Namespace variables
 KEYCLOAK_NAMESPACE="{{ lab_scripts_keycloak_namespace }}"
@@ -171,7 +171,6 @@ echo "Step 3.1: Applying RHTAS Instance CR..."
 export TAS_CHAINS_CLIENT_ID=${TAS_CLIENT_ID}
 export TAS_CHAINS_REALM=${TAS_CHAINS_REALM}
 export TAS_SSO_REALM=${TAS_SSO_REALM}
-export KEYCLOAK_URL
 
 envsubst < $(eval echo "~/lab-assets/tas-instance.yml") | oc apply -n ${TAS_NAMESPACE} -f -
 echo "✓ RHTAS Instance CR applied"
