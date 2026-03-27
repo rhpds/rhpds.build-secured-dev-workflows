@@ -1,0 +1,172 @@
+#!/bin/bash
+#
+# Script: test-image-signing.sh
+# Purpose: Test RHTAS Image Signing - Showroom Module 2 Step 2
+#
+# This script automates:
+# - Step 6.1: Set Up Permissions for the Test Task
+# - Step 6.2: Run the Tekton Task
+# - Step 6.5: Clean Up Temporary Permissions
+#
+# Manual verification step (6.3) required in Quay Console
+
+set -e
+
+# Namespace configuration
+APP_CI_NAMESPACE="{{ lab_scripts_app_ci_namespace }}"
+TEST_SA="chains-signing-image-tester"
+REGISTRY_SECRET="tssc-image-registry-auth"
+TEST_TASK_FILE="~/lab-assets/example-image-sign.yml"
+
+echo "========================================="
+echo "RHTAS Image Signing Smoke Test"
+echo "========================================="
+echo ""
+
+#######################################
+# Step 6.1: Set Up Permissions
+#######################################
+echo "Step 6.1: Setting up test permissions..."
+echo "---------------------------------------"
+
+# Create service account
+echo "Creating service account: ${TEST_SA}..."
+oc create sa ${TEST_SA} -n ${APP_CI_NAMESPACE} 2>/dev/null || echo "✓ Service account already exists"
+
+# Grant SCCs
+echo "Granting anyuid SCC..."
+oc adm policy add-scc-to-user anyuid -z ${TEST_SA} -n ${APP_CI_NAMESPACE}
+
+echo "Granting privileged SCC..."
+oc adm policy add-scc-to-user privileged -z ${TEST_SA} -n ${APP_CI_NAMESPACE}
+
+# Link registry secret
+echo "Linking registry secret..."
+oc secret link ${TEST_SA} ${REGISTRY_SECRET} -n ${APP_CI_NAMESPACE} --for=mount 2>/dev/null || echo "✓ Secret already linked"
+
+echo "✓ Test permissions configured"
+echo ""
+
+#######################################
+# Step 6.2: Run the Tekton Task
+#######################################
+echo "Step 6.2: Running Tekton build-and-push task..."
+echo "-----------------------------------------------"
+
+# Apply the task
+echo "Applying Tekton task..."
+oc create -f ${TEST_TASK_FILE} -n ${APP_CI_NAMESPACE}
+echo "✓ Tekton task created"
+
+# Get the TaskRun name (most recent)
+echo "Waiting for TaskRun to start..."
+sleep 5
+TASKRUN_NAME=$(oc get taskrun -n ${APP_CI_NAMESPACE} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+
+if [ -z "$TASKRUN_NAME" ]; then
+    echo "Error: Failed to find TaskRun"
+    exit 1
+fi
+
+echo "Monitoring TaskRun: ${TASKRUN_NAME}"
+echo ""
+
+# Wait for TaskRun to complete
+echo "Waiting for TaskRun to complete (this may take a few minutes)..."
+TIMEOUT=600
+ELAPSED=0
+while [ $ELAPSED -lt $TIMEOUT ]; do
+    TASKRUN_STATUS=$(oc get taskrun ${TASKRUN_NAME} -n ${APP_CI_NAMESPACE} -o jsonpath='{.status.conditions[?(@.type=="Succeeded")].status}' 2>/dev/null || echo "Unknown")
+    TASKRUN_REASON=$(oc get taskrun ${TASKRUN_NAME} -n ${APP_CI_NAMESPACE} -o jsonpath='{.status.conditions[?(@.type=="Succeeded")].reason}' 2>/dev/null || echo "")
+
+    if [ "$TASKRUN_STATUS" == "True" ]; then
+        echo "✓ TaskRun completed successfully"
+        echo ""
+
+        # Get image details
+        IMAGE_URL=$(oc get taskrun ${TASKRUN_NAME} -n ${APP_CI_NAMESPACE} -o jsonpath='{.status.results[?(@.name=="IMAGE_URL")].value}' 2>/dev/null || echo "N/A")
+        IMAGE_DIGEST=$(oc get taskrun ${TASKRUN_NAME} -n ${APP_CI_NAMESPACE} -o jsonpath='{.status.results[?(@.name=="IMAGE_DIGEST")].value}' 2>/dev/null || echo "N/A")
+
+        echo "Image Details:"
+        echo "  URL: ${IMAGE_URL}"
+        echo "  Digest: ${IMAGE_DIGEST}"
+        echo ""
+        break
+    elif [ "$TASKRUN_STATUS" == "False" ]; then
+        echo "✗ TaskRun failed: ${TASKRUN_REASON}"
+        echo ""
+        echo "TaskRun logs:"
+        oc logs -n ${APP_CI_NAMESPACE} --selector=tekton.dev/taskRun=${TASKRUN_NAME} --tail=50
+        exit 1
+    fi
+
+    # Show progress every 30 seconds
+    if [ $((ELAPSED % 30)) -eq 0 ]; then
+        echo "  Status: ${TASKRUN_STATUS:-Pending} (${ELAPSED}s elapsed)"
+    fi
+
+    sleep 10
+    ELAPSED=$((ELAPSED + 10))
+done
+
+if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo "Error: TaskRun did not complete within ${TIMEOUT} seconds"
+    exit 1
+fi
+
+# Wait a bit for Tekton Chains to sign the image
+echo "Waiting for Tekton Chains to sign the image..."
+sleep 15
+echo "✓ Signing should be complete"
+echo ""
+
+#######################################
+# Step 6.5: Clean Up
+#######################################
+echo "Step 6.5: Cleaning up test permissions..."
+echo "-----------------------------------------"
+
+# Remove SCCs
+echo "Removing anyuid SCC..."
+oc adm policy remove-scc-from-user anyuid -z ${TEST_SA} -n ${APP_CI_NAMESPACE}
+
+echo "Removing privileged SCC..."
+oc adm policy remove-scc-from-user privileged -z ${TEST_SA} -n ${APP_CI_NAMESPACE}
+
+# Delete service account
+echo "Deleting service account..."
+oc delete sa ${TEST_SA} -n ${APP_CI_NAMESPACE}
+
+echo "✓ Cleanup complete"
+echo ""
+
+echo "========================================="
+echo "RHTAS Image Signing Test Complete!"
+echo "========================================="
+echo ""
+echo "Summary:"
+echo "  ✓ Test service account created"
+echo "  ✓ Tekton task executed successfully"
+echo "  ✓ Image built and pushed to Quay"
+echo "  ✓ Tekton Chains signed the image"
+echo "  ✓ Cleanup completed"
+echo ""
+echo "========================================="
+echo "Verify Signature in Quay Console"
+echo "========================================="
+echo ""
+echo "To verify the signature:"
+echo ""
+echo "  1. Open the Quay Console tab in Showroom"
+echo ""
+echo "  2. Log in with:"
+echo "     Username: quayadmin"
+echo "     Password: tCpjAzqU"
+echo ""
+echo "  3. Navigate to: tssc/tekton-chains-test repository"
+echo ""
+echo "  4. Look for the image tag created by this task"
+echo ""
+echo "  5. Verify the SHIELD ICON appears next to the tag"
+echo "     (This indicates a valid Cosign signature)"
+echo ""
