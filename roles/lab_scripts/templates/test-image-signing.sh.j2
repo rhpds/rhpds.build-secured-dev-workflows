@@ -13,10 +13,11 @@
 set -e
 
 # Namespace configuration
+export LAB_ASSETS_DIR="{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}"
 export APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
 export TEST_SA="chains-signing-image-tester"
 export REGISTRY_SECRET="tssc-image-registry-auth"
-export TEST_TASK_FILE=$(eval echo "~/lab-assets/example-image-sign.yml")
+export TEST_TASK_FILE=$(eval echo "${LAB_ASSETS_DIR}/example-image-sign.yml")
 
 echo "========================================="
 echo "RHTAS Image Signing Smoke Test"

@@ -8,6 +8,7 @@
 set -e
 
 # Initialize environment variables
+export LAB_ASSETS_DIR="{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}"
 export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
@@ -129,7 +130,7 @@ echo ""
 echo "Step 4: Resetting GitOps backstage configuration..."
 echo "----------------------------------------------------"
 
-bash ~/lab-assets/update-gitops-backstage-config.sh reset
+bash ${LAB_ASSETS_DIR}/update-gitops-backstage-config.sh reset
 
 echo ""
 
@@ -139,7 +140,7 @@ echo ""
 echo "Step 5: Resetting RHDH devfile configuration..."
 echo "------------------------------------------------"
 
-bash ~/lab-assets/update-rhdh-devfile-config.sh reset
+bash ${LAB_ASSETS_DIR}/update-rhdh-devfile-config.sh reset
 
 echo ""
 

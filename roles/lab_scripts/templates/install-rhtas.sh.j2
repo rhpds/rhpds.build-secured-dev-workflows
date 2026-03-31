@@ -13,6 +13,7 @@
 set -e
 
 # Initialize environment variables
+export LAB_ASSETS_DIR="{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}"
 export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
@@ -172,7 +173,7 @@ export TAS_CHAINS_CLIENT_ID=${TAS_CLIENT_ID}
 export TAS_CHAINS_REALM=${TAS_CHAINS_REALM}
 export TAS_SSO_REALM=${TAS_SSO_REALM}
 
-envsubst < $(eval echo "~/lab-assets/tas-instance.yml") | oc apply -n ${TAS_NAMESPACE} -f -
+envsubst < $(eval echo "${LAB_ASSETS_DIR}/tas-instance.yml") | oc apply -n ${TAS_NAMESPACE} -f -
 echo "✓ RHTAS Instance CR applied"
 
 # Step 3.2: Wait for RHTAS instance status URLs to be populated
@@ -225,12 +226,12 @@ echo "✓ Client secret retrieved"
 # Step 4.2: Create OIDC info secret
 echo "Step 4.2: Creating OIDC info secret..."
 export TAS_CHAINS_CLIENT_SECRET
-envsubst < $(eval echo "~/lab-assets/oidc-info-secret.yml") | oc apply -n ${PIPELINES_NAMESPACE} -f -
+envsubst < $(eval echo "${LAB_ASSETS_DIR}/oidc-info-secret.yml") | oc apply -n ${PIPELINES_NAMESPACE} -f -
 echo "✓ OIDC info secret created"
 
 # Step 4.3: Deploy OIDC refresher app
 echo "Step 4.3: Deploying OIDC refresher app..."
-oc apply -f $(eval echo "~/lab-assets/oidc-refresher-app.yml") -n ${PIPELINES_NAMESPACE}
+oc apply -f $(eval echo "${LAB_ASSETS_DIR}/oidc-refresher-app.yml") -n ${PIPELINES_NAMESPACE}
 echo "✓ OIDC refresher app deployed"
 
 # Step 4.4: Wait for refresher pod to be Running
@@ -284,7 +285,7 @@ OLD_CHAINS_POD=$(oc get pods -n ${PIPELINES_NAMESPACE} -l app=tekton-chains-cont
 echo "Current pod: ${OLD_CHAINS_POD}"
 
 echo "Step 5.2: Patching Tekton configuration..."
-oc patch tektonconfig config -n ${PIPELINES_NAMESPACE} --type=merge --patch "$(cat $(eval echo "~/lab-assets/tekton-chains-patch.yml"))"
+oc patch tektonconfig config -n ${PIPELINES_NAMESPACE} --type=merge --patch "$(cat $(eval echo "${LAB_ASSETS_DIR}/tekton-chains-patch.yml"))"
 echo "✓ Tekton Chains patch applied"
 
 echo "Step 5.3: Waiting for tekton-chains-controller pod to be recreated..."
