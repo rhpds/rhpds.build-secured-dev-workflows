@@ -24,8 +24,6 @@ ACS_INTEGRATION_NAME="acs_quay"
 
 # Quay Configuration
 export QUAY_TOKEN="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_token }}"
-export QUAY_ADMIN_USERNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_username }}"
-export QUAY_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_password }}"
 
 echo "========================================="
 echo "Configuring ACS-Quay Integration"
@@ -102,8 +100,6 @@ INTEGRATION_PAYLOAD=$(cat <<EOF
   "quay": {
     "endpoint": "https://${QUAY_URL}",
     "oauthToken": "${QUAY_TOKEN}",
-    "registryUsername": "${QUAY_ADMIN_USERNAME}",
-    "registryPassword": "${QUAY_ADMIN_PASSWORD}",
     "insecure": true
   },
   "skipTestIntegration": true
