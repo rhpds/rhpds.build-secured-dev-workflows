@@ -1,5 +1,10 @@
 ---
 # Workload orchestration - calls individual module tasks
+- name: Set script variables
+  ansible.builtin.set_fact:
+    rhpds_build_secured_dev_workflows_lab_scripts_quay_token: "{{ lookup('agnosticd_user_data', 'quay_admin_token') | default('') }}"
+    rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_password: "{{ lookup('agnosticd_user_data', 'quay_admin_password') | default('') }}"
+    rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_password: "{{ lookup('agnosticd_user_data', 'acs_admin_password') | default('') }}"
 
 - name: Execute Module 1 tasks
   ansible.builtin.include_tasks: module_1.yml
