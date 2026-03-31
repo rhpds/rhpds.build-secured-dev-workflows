@@ -55,7 +55,7 @@ echo ""
 echo "Check 2: TPA CLI Credentials Secret"
 echo "------------------------------------"
 
-if oc get secret tpa-cli-credentials -n ${TPA_NAMESPACE} &>/dev/null; then
+if oc get secret tpa-realm-cli-clients -n ${TPA_NAMESPACE} &>/dev/null; then
     echo "✓ PASS: TPA CLI credentials secret exists"
 else
     echo "✗ FAIL: TPA CLI credentials secret not found"
