@@ -123,6 +123,26 @@ else
 fi
 echo ""
 
+#######################################
+# Step 4: Reset GitOps Backstage Configuration
+#######################################
+echo "Step 4: Resetting GitOps backstage configuration..."
+echo "----------------------------------------------------"
+
+bash ~/lab-assets/update-gitops-backstage-config.sh reset
+
+echo ""
+
+#######################################
+# Step 5: Reset RHDH Devfile Configuration
+#######################################
+echo "Step 5: Resetting RHDH devfile configuration..."
+echo "------------------------------------------------"
+
+bash ~/lab-assets/update-rhdh-devfile-config.sh reset
+
+echo ""
+
 echo "========================================="
 echo "Module 3 Reset Complete!"
 echo "========================================="
@@ -132,4 +152,6 @@ echo "  ✓ tpa-secret removed from ${APP_CI_NAMESPACE}"
 echo "  ✓ gitlab-auth-secret removed from ${APP_CI_NAMESPACE}"
 echo "  ✓ tas-git-config ConfigMap removed from ${DEVSPACES_NAMESPACE}"
 echo "  ✓ Developer user (${DEVELOPER_USERNAME}) removed from Keycloak"
+echo "  ✓ GitOps backstage configuration reset to initial state"
+echo "  ✓ RHDH devfile configuration reset to initial state"
 echo ""

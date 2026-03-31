@@ -1,0 +1,173 @@
+#!/bin/bash
+#
+# Script: update-rhdh-devfile-config.sh
+# Purpose: Update or reset RHDH devfile configuration - Showroom Module 3
+#
+# Usage: ./update-rhdh-devfile-config.sh [mode]
+#   mode: update (default) - Apply configuration changes
+#         reset           - Revert to initial state
+#
+
+set -e
+
+# Get mode from argument (default to update)
+MODE="${1:-update}"
+
+if [ "$MODE" != "update" ] && [ "$MODE" != "reset" ]; then
+    echo "Error: Invalid mode '$MODE'"
+    echo "Usage: $0 [update|reset]"
+    exit 1
+fi
+
+# Initialize environment variables
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export GITLAB_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}"
+export REPO_URL="https://gitlab-${GITLAB_NAMESPACE}.apps.${CLUSTER_DOMAIN}/rhdh/build-secured-dev-workflows-idp-configuration"
+export USERNAME="root"
+export PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}"
+export TARGET_FILE="scaffolder-templates/quarkus-stssc-template/skeleton/.devfile.yaml"
+export TARGET_COMMIT="9bbb3bb93143bda698c2f01982cad858271eabdc"
+export CLONE_DIR="/tmp/build-secured-dev-workflows-idp-configuration"
+
+echo "========================================="
+if [ "$MODE" == "update" ]; then
+    echo "Update RHDH Devfile Configuration"
+else
+    echo "Reset RHDH Devfile Configuration"
+fi
+echo "========================================="
+echo ""
+echo "Mode: $MODE"
+echo "Repository: ${REPO_URL}"
+echo "Target file: ${TARGET_FILE}"
+echo ""
+
+#######################################
+# Step 1: Clone Repository
+#######################################
+echo "Step 1: Cloning repository..."
+echo "-----------------------------"
+
+# Clean up any existing clone
+if [ -d "$CLONE_DIR" ]; then
+    echo "Removing existing directory..."
+    rm -rf "$CLONE_DIR"
+fi
+
+# Clone repository with credentials
+git clone "https://${USERNAME}:${PASSWORD}@${REPO_URL#https://}" "$CLONE_DIR"
+cd "$CLONE_DIR"
+
+echo "✓ Repository cloned"
+echo ""
+
+#######################################
+# Step 2: Reset to Target Commit
+#######################################
+echo "Step 2: Resetting to target commit..."
+echo "--------------------------------------"
+
+# Reset to the specific commit
+git reset --hard "$TARGET_COMMIT"
+
+echo "Found commit: $TARGET_COMMIT"
+git log --oneline -1 "$TARGET_COMMIT"
+echo "✓ Reset to target commit"
+echo ""
+
+if [ "$MODE" == "update" ]; then
+    #######################################
+    # Step 3: Process Configuration File (UPDATE MODE ONLY)
+    #######################################
+    echo "Step 3: Processing configuration file..."
+    echo "-----------------------------------------"
+
+    # Check if target file exists
+    if [ ! -f "$TARGET_FILE" ]; then
+        echo "✗ Error: File $TARGET_FILE not found"
+        exit 1
+    fi
+
+    # Uncomment all lines (replace '# ' after any leading spaces with just the spaces)
+    sed -i 's/^\([ ]*\)# /\1/' "$TARGET_FILE"
+
+    echo "✓ Configuration file processed"
+    echo "  - All commented lines uncommented"
+    echo ""
+
+    #######################################
+    # Step 4: Commit Changes
+    #######################################
+    echo "Step 4: Committing changes..."
+    echo "------------------------------"
+
+    # Stage changes
+    git add "$TARGET_FILE"
+
+    # Check if there are changes to commit
+    if git diff --cached --quiet; then
+        echo "✓ No changes to commit (already up to date)"
+        echo ""
+    else
+        # Commit changes
+        git commit -m "Update devfile configuration for workshop
+
+- Uncommented all lines in devfile.yaml
+- Enabled all devfile components and commands"
+
+        echo "✓ Changes committed"
+        echo ""
+    fi
+else
+    #######################################
+    # Step 3: Commit Reset (RESET MODE)
+    #######################################
+    echo "Step 3: No changes needed - already at target commit"
+    echo "-----------------------------------------------------"
+    echo "✓ Repository is at initial state"
+    echo ""
+fi
+
+#######################################
+# Step 4/5: Push Changes
+#######################################
+STEP_NUM=$( [ "$MODE" == "update" ] && echo "5" || echo "4" )
+echo "Step ${STEP_NUM}: Pushing changes..."
+echo "--------------------------"
+
+# Get current branch name
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+echo "Current branch: $BRANCH_NAME"
+
+# Push changes (force push to ensure reset takes effect, ignore if nothing to push)
+git push origin "$BRANCH_NAME" --force 2>&1 | grep -v "Everything up-to-date" || true
+
+echo "✓ Changes pushed to origin/$BRANCH_NAME"
+echo ""
+
+echo "========================================="
+if [ "$MODE" == "update" ]; then
+    echo "RHDH Devfile Configuration Updated!"
+else
+    echo "RHDH Devfile Configuration Reset!"
+fi
+echo "========================================="
+echo ""
+if [ "$MODE" == "update" ]; then
+    echo "Successfully updated RHDH configuration repository:"
+    echo "  ✓ Cloned repository from GitLab"
+    echo "  ✓ Reset to commit (${TARGET_COMMIT:0:7})"
+    echo "  ✓ Updated ${TARGET_FILE}"
+    echo "    - Uncommented all configuration lines"
+    echo "  ✓ Committed and pushed changes"
+    echo ""
+    echo "The devfile configuration is now ready for use."
+else
+    echo "Successfully reset RHDH configuration repository:"
+    echo "  ✓ Cloned repository from GitLab"
+    echo "  ✓ Reset to commit (${TARGET_COMMIT:0:7})"
+    echo "  ✓ Pushed reset to remote"
+    echo ""
+    echo "The devfile configuration has been reverted to initial state."
+fi
+echo ""

@@ -24,14 +24,26 @@ echo "========================================="
 bash ~/lab-assets/create-developer-user.sh
 echo ""
 
-# Step 2: Create Dev Spaces ConfigMap
-echo "Running Step 2: Create Dev Spaces ConfigMap..."
+# Step 2: Update GitOps Backstage Configuration
+echo "Running Step 2: Update GitOps Backstage Configuration..."
+echo "========================================================="
+bash ~/lab-assets/update-gitops-backstage-config.sh update
+echo ""
+
+# Step 3: Update RHDH Devfile Configuration
+echo "Running Step 3: Update RHDH Devfile Configuration..."
+echo "====================================================="
+bash ~/lab-assets/update-rhdh-devfile-config.sh update
+echo ""
+
+# Step 4: Create Dev Spaces ConfigMap
+echo "Running Step 4: Create Dev Spaces ConfigMap..."
 echo "==============================================="
 bash ~/lab-assets/create-devspaces-configmap.sh
 echo ""
 
-# Step 3: Create Pipeline Secrets
-echo "Running Step 3: Create Pipeline Secrets..."
+# Step 5: Create Pipeline Secrets
+echo "Running Step 5: Create Pipeline Secrets..."
 echo "==========================================="
 bash ~/lab-assets/create-pipeline-secrets.sh
 echo ""
@@ -47,6 +59,8 @@ echo "  ✓ Dev Spaces ConfigMap created with TAS URLs"
 echo "  ✓ Pipeline secrets created:"
 echo "    - tpa-secret (RHTPA authentication)"
 echo "    - gitlab-auth-secret (GitLab authentication)"
+echo "  ✓ GitOps backstage configuration updated"
+echo "  ✓ RHDH devfile configuration updated"
 echo ""
 echo "The developer environment is now fully configured!"
 echo ""

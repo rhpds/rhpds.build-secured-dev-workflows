@@ -1,0 +1,225 @@
+#!/bin/bash
+#
+# Script: update-gitops-backstage-config.sh
+# Purpose: Update or reset GitOps backstage configuration - Showroom Module 3
+#
+# Usage: ./update-gitops-backstage-config.sh [mode]
+#   mode: update (default) - Apply configuration changes
+#         reset           - Revert to initial state
+#
+
+set -e
+
+# Get mode from argument (default to update)
+MODE="${1:-update}"
+
+if [ "$MODE" != "update" ] && [ "$MODE" != "reset" ]; then
+    echo "Error: Invalid mode '$MODE'"
+    echo "Usage: $0 [update|reset]"
+    exit 1
+fi
+
+# Initialize environment variables
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export GITLAB_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}"
+export REPO_URL="https://gitlab-${GITLAB_NAMESPACE}.apps.${CLUSTER_DOMAIN}/gitops/build-secured-dev-workflows-idp-gitops"
+export USERNAME="root"
+export PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}"
+export TARGET_FILE="charts/backstage/backstage-values.yaml"
+export COMMIT_MESSAGE="Templating process completed"
+export CLONE_DIR="/tmp/build-secured-dev-workflows-idp-gitops"
+
+echo "========================================="
+if [ "$MODE" == "update" ]; then
+    echo "Update GitOps Backstage Configuration"
+else
+    echo "Reset GitOps Backstage Configuration"
+fi
+echo "========================================="
+echo ""
+echo "Mode: $MODE"
+echo "Repository: ${REPO_URL}"
+echo "Target file: ${TARGET_FILE}"
+echo ""
+
+#######################################
+# Step 1: Clone Repository
+#######################################
+echo "Step 1: Cloning repository..."
+echo "-----------------------------"
+
+# Clean up any existing clone
+if [ -d "$CLONE_DIR" ]; then
+    echo "Removing existing directory..."
+    rm -rf "$CLONE_DIR"
+fi
+
+# Clone repository with credentials
+git clone "https://${USERNAME}:${PASSWORD}@${REPO_URL#https://}" "$CLONE_DIR"
+cd "$CLONE_DIR"
+
+echo "✓ Repository cloned"
+echo ""
+
+#######################################
+# Step 2: Find Initial Commit
+#######################################
+echo "Step 2: Finding initial commit..."
+echo "----------------------------------"
+
+# Find the commit with the target message (partial match)
+INITIAL_COMMIT=$(git log --all --grep="Templating process completed" --format="%H" | head -n 1)
+
+if [ -z "$INITIAL_COMMIT" ]; then
+    echo "✗ Error: Could not find commit with message containing '${COMMIT_MESSAGE}'"
+    exit 1
+fi
+
+echo "Found initial commit: $INITIAL_COMMIT"
+git log --oneline -1 "$INITIAL_COMMIT"
+echo ""
+
+#######################################
+# Step 3: Reset to Initial Commit
+#######################################
+echo "Step 3: Resetting to initial commit..."
+echo "---------------------------------------"
+
+git reset --hard "$INITIAL_COMMIT"
+
+echo "✓ Reset to initial commit"
+echo ""
+
+if [ "$MODE" == "update" ]; then
+    #######################################
+    # Step 4: Process Configuration File (UPDATE MODE ONLY)
+    #######################################
+    echo "Step 4: Processing configuration file..."
+    echo "-----------------------------------------"
+
+    # Check if target file exists
+    if [ ! -f "$TARGET_FILE" ]; then
+        echo "✗ Error: File $TARGET_FILE not found"
+        exit 1
+    fi
+
+    # Uncomment all lines (replace '# ' after any leading spaces with just the spaces)
+    sed -i 's/^\([ ]*\)# /\1/' "$TARGET_FILE"
+
+    # Comment lines 173-175 (add # at the very start of the line)
+    sed -i '173,175s/^/#/' "$TARGET_FILE"
+
+    echo "✓ Configuration file processed"
+    echo "  - All commented lines uncommented"
+    echo "  - Lines 173-175 commented out"
+    echo ""
+
+    #######################################
+    # Step 5: Commit Changes
+    #######################################
+    echo "Step 5: Committing changes..."
+    echo "------------------------------"
+
+    # Stage changes
+    git add "$TARGET_FILE"
+
+    # Check if there are changes to commit
+    if git diff --cached --quiet; then
+        echo "✓ No changes to commit (already up to date)"
+        echo ""
+    else
+        # Commit changes
+        git commit -m "Update backstage configuration for workshop
+
+- Uncommented all lines in backstage-values.yaml
+- Commented out guest authentication (lines 173-175)"
+
+        echo "✓ Changes committed"
+        echo ""
+    fi
+else
+    #######################################
+    # Step 4: Commit Reset (RESET MODE)
+    #######################################
+    echo "Step 4: No changes needed - already at initial commit"
+    echo "------------------------------------------------------"
+    echo "✓ Repository is at initial state"
+    echo ""
+fi
+
+#######################################
+# Step 5/6: Push Changes
+#######################################
+STEP_NUM=$( [ "$MODE" == "update" ] && echo "6" || echo "5" )
+echo "Step ${STEP_NUM}: Pushing changes..."
+echo "--------------------------"
+
+# Get current branch name
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+echo "Current branch: $BRANCH_NAME"
+
+# Push changes (force push to ensure reset takes effect, ignore if nothing to push)
+git push origin "$BRANCH_NAME" --force 2>&1 | grep -v "Everything up-to-date" || true
+
+echo "✓ Changes pushed to origin/$BRANCH_NAME"
+echo ""
+
+#######################################
+# Step 6/7: Hard Refresh ArgoCD Application
+#######################################
+STEP_NUM=$( [ "$MODE" == "update" ] && echo "7" || echo "6" )
+echo "Step ${STEP_NUM}: Refreshing ArgoCD backstage application..."
+echo "---------------------------------------------------"
+
+# ArgoCD Configuration
+ARGOCD_NAMESPACE="openshift-gitops"
+APP_NAME="backstage"
+
+# Find ArgoCD application controller pod
+CONTROLLER_POD=$(oc get pod -n ${ARGOCD_NAMESPACE} \
+  -l app.kubernetes.io/name=argocd-application-controller \
+  -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+
+if [ -z "$CONTROLLER_POD" ]; then
+    echo "Warning: Could not find ArgoCD application controller pod"
+    echo "Skipping ArgoCD refresh"
+else
+    echo "Found controller pod: ${CONTROLLER_POD}"
+
+    # Execute hard refresh
+    oc exec -n ${ARGOCD_NAMESPACE} ${CONTROLLER_POD} -- \
+      argocd app get ${APP_NAME} --hard-refresh --core 2>/dev/null || echo "Warning: ArgoCD refresh failed"
+
+    echo "✓ ArgoCD application refreshed"
+fi
+echo ""
+
+echo "========================================="
+if [ "$MODE" == "update" ]; then
+    echo "GitOps Backstage Configuration Updated!"
+else
+    echo "GitOps Backstage Configuration Reset!"
+fi
+echo "========================================="
+echo ""
+if [ "$MODE" == "update" ]; then
+    echo "Successfully updated GitOps repository:"
+    echo "  ✓ Cloned repository from GitLab"
+    echo "  ✓ Reset to initial commit (${INITIAL_COMMIT:0:7})"
+    echo "  ✓ Updated ${TARGET_FILE}"
+    echo "    - Uncommented all configuration lines"
+    echo "    - Commented out guest authentication (lines 173-175)"
+    echo "  ✓ Committed and pushed changes"
+    echo "  ✓ ArgoCD application refreshed"
+    echo ""
+    echo "The backstage configuration is now ready for use."
+else
+    echo "Successfully reset GitOps repository:"
+    echo "  ✓ Cloned repository from GitLab"
+    echo "  ✓ Reset to initial commit (${INITIAL_COMMIT:0:7})"
+    echo "  ✓ Pushed reset to remote"
+    echo "  ✓ ArgoCD application refreshed"
+    echo ""
+    echo "The backstage configuration has been reverted to initial state."
+fi
+echo ""
