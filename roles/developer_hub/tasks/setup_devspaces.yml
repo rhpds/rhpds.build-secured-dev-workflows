@@ -18,7 +18,7 @@
     body:
       name: devspaces
       redirect_uri: "https://{{ _rhpds_build_secured_dev_workflows_developer_hub_devspaces_host }}/api/oauth/callback"
-      scopes: api read_user read_repository write_repository sudo openid profile email
+      scopes: api read_user read_repository write_repository openid profile email
       confidential: false
     headers:
       PRIVATE-TOKEN: "{{ _rhpds_build_secured_dev_workflows_developer_hub_gitlab_root_token }}"
