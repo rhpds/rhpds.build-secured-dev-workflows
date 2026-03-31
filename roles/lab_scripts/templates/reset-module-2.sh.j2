@@ -95,18 +95,18 @@ echo ""
 echo "Step 3: Deleting RHTAS instance..."
 echo "-----------------------------------"
 
-if oc get securesign -n ${TAS_NAMESPACE} instance 2>/dev/null; then
-    oc delete securesign instance -n ${TAS_NAMESPACE}
+if oc get securesign -n ${TAS_NAMESPACE} trusted-artifact-signer 2>/dev/null; then
+    oc delete securesign trusted-artifact-signer -n ${TAS_NAMESPACE}
 
     # Wait for RHTAS instance to be fully deleted
     echo "Waiting for RHTAS instance to be fully deleted..."
-    oc wait --for=delete securesign/instance -n ${TAS_NAMESPACE} --timeout=300s 2>/dev/null || true
+    oc wait --for=delete securesign/trusted-artifact-signer -n ${TAS_NAMESPACE} --timeout=300s 2>/dev/null || true
 
     # Verify deletion
     TIMEOUT=60
     ELAPSED=0
     while [ $ELAPSED -lt $TIMEOUT ]; do
-        if ! oc get securesign instance -n ${TAS_NAMESPACE} 2>/dev/null; then
+        if ! oc get securesign trusted-artifact-signer -n ${TAS_NAMESPACE} 2>/dev/null; then
             echo "✓ RHTAS instance deleted"
             break
         fi
@@ -114,7 +114,7 @@ if oc get securesign -n ${TAS_NAMESPACE} instance 2>/dev/null; then
         ELAPSED=$((ELAPSED + 5))
     done
 
-    if oc get securesign instance -n ${TAS_NAMESPACE} 2>/dev/null; then
+    if oc get securesign trusted-artifact-signer -n ${TAS_NAMESPACE} 2>/dev/null; then
         echo "Warning: RHTAS instance still exists after timeout"
     fi
 

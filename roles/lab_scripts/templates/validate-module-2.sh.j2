@@ -125,7 +125,7 @@ echo ""
 echo "Check 4: RHTAS Instance Deployment"
 echo "-----------------------------------"
 
-if oc get securesign -n ${TAS_NAMESPACE} instance &>/dev/null; then
+if oc get securesign -n ${TAS_NAMESPACE} trusted-artifact-signer &>/dev/null; then
     echo "✓ PASS: RHTAS instance exists"
 
     # Check if TUF pod is running
