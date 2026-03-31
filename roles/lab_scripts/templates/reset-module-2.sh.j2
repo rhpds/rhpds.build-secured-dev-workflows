@@ -117,6 +117,25 @@ if oc get securesign -n ${TAS_NAMESPACE} instance 2>/dev/null; then
     if oc get securesign instance -n ${TAS_NAMESPACE} 2>/dev/null; then
         echo "Warning: RHTAS instance still exists after timeout"
     fi
+
+    # Wait for TUF pod to be deleted
+    echo "Waiting for TUF pod to be deleted..."
+    TIMEOUT=120
+    ELAPSED=0
+    while [ $ELAPSED -lt $TIMEOUT ]; do
+        TUF_POD_COUNT=$(oc get pods -n ${TAS_NAMESPACE} -l app.kubernetes.io/component=tuf -o name 2>/dev/null | wc -l)
+        if [ "$TUF_POD_COUNT" -eq 0 ]; then
+            echo "✓ TUF pod deleted"
+            break
+        fi
+        echo "TUF pod still present, waiting..."
+        sleep 5
+        ELAPSED=$((ELAPSED + 5))
+    done
+
+    if [ "$TUF_POD_COUNT" -gt 0 ]; then
+        echo "Warning: TUF pod still exists after timeout"
+    fi
 else
     echo "✓ RHTAS instance not found (already clean)"
 fi
