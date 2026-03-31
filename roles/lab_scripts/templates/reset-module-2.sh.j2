@@ -24,8 +24,7 @@ TAS_SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}
 TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
 
 # Quay Configuration
-QUAY_ADMIN_USER="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_username }}"
-QUAY_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_password }}"
+QUAY_TOKEN="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_token }}"
 QUAY_ORG="tssc"
 QUAY_REPO="tekton-chains-test"
 
@@ -285,48 +284,37 @@ else
     echo "Quay URL: https://${QUAY_URL}"
     echo "Checking repository: ${QUAY_ORG}/${QUAY_REPO}"
 
-    # Get OAuth token from Quay
-    TOKEN_RESPONSE=$(curl -k -s -X POST "https://${QUAY_URL}/api/v1/user/initialize" \
-      -H "Content-Type: application/json" \
-      -d "{\"username\":\"${QUAY_ADMIN_USER}\",\"password\":\"${QUAY_ADMIN_PASSWORD}\"}" 2>/dev/null || true)
-
-    # Try to extract token, if not available use basic auth
-    QUAY_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.token // empty' 2>/dev/null || true)
-
-    if [ -n "$QUAY_TOKEN" ]; then
-        echo "Using OAuth token authentication"
-        AUTH_HEADER="Authorization: Bearer ${QUAY_TOKEN}"
+    if [ -z "$QUAY_TOKEN" ]; then
+        echo "Warning: QUAY_TOKEN not set, skipping repository deletion"
+        echo "  Set QUAY_TOKEN environment variable before running this script"
     else
-        echo "Using Basic authentication"
-        AUTH_HEADER="Authorization: Basic $(echo -n ${QUAY_ADMIN_USER}:${QUAY_ADMIN_PASSWORD} | base64)"
-    fi
-
-    # Check if repository exists first
-    CHECK_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" \
-      -H "${AUTH_HEADER}" \
-      "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
-
-    if [ "$CHECK_CODE" == "404" ]; then
-        echo "✓ Quay repository not found (already clean): ${QUAY_ORG}/${QUAY_REPO}"
-    elif [ "$CHECK_CODE" == "200" ]; then
-        echo "Repository exists, deleting..."
-        # Delete repository using Quay API
-        HTTP_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" -X DELETE \
-          -H "${AUTH_HEADER}" \
+        # Check if repository exists first
+        CHECK_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: Bearer ${QUAY_TOKEN}" \
           "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
 
-        if [ "$HTTP_CODE" == "204" ] || [ "$HTTP_CODE" == "200" ]; then
-            echo "✓ Quay repository deleted: ${QUAY_ORG}/${QUAY_REPO}"
+        if [ "$CHECK_CODE" == "404" ]; then
+            echo "✓ Quay repository not found (already clean): ${QUAY_ORG}/${QUAY_REPO}"
+        elif [ "$CHECK_CODE" == "200" ]; then
+            echo "Repository exists, deleting..."
+            # Delete repository using Quay API
+            HTTP_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" -X DELETE \
+              -H "Authorization: Bearer ${QUAY_TOKEN}" \
+              "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
+
+            if [ "$HTTP_CODE" == "204" ] || [ "$HTTP_CODE" == "200" ]; then
+                echo "✓ Quay repository deleted: ${QUAY_ORG}/${QUAY_REPO}"
+            else
+                echo "Warning: Failed to delete Quay repository (HTTP: ${HTTP_CODE})"
+            fi
+        elif [ "$CHECK_CODE" == "401" ]; then
+            echo "Warning: Authentication failed for Quay (HTTP: 401)"
+            echo "  Check QUAY_TOKEN is valid"
+            echo "  Skipping deletion"
         else
-            echo "Warning: Failed to delete Quay repository (HTTP: ${HTTP_CODE})"
+            echo "Warning: Could not check Quay repository (HTTP: ${CHECK_CODE})"
+            echo "  Skipping deletion"
         fi
-    elif [ "$CHECK_CODE" == "401" ]; then
-        echo "Warning: Authentication failed for Quay (HTTP: 401)"
-        echo "  Check QUAY_ADMIN_USER and QUAY_ADMIN_PASSWORD"
-        echo "  Skipping deletion"
-    else
-        echo "Warning: Could not check Quay repository (HTTP: ${CHECK_CODE})"
-        echo "  Skipping deletion"
     fi
 fi
 echo ""

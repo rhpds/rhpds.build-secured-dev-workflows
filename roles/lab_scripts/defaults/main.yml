@@ -28,8 +28,7 @@ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm: sso
 rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id: trusted-artifact-signer
 
 # Quay Configuration
-rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_username: quayadmin
-rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_password: openshift
+rhpds_build_secured_dev_workflows_lab_scripts_quay_token: ""
 
 # Module 3: Developer User Configuration
 rhpds_build_secured_dev_workflows_lab_scripts_developer_username: user1
