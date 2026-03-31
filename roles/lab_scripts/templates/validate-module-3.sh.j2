@@ -185,10 +185,10 @@ if oc get secret tpa-secret -n ${APP_CI_NAMESPACE} &>/dev/null; then
 
     # Verify it contains required data
     TPA_SECRET_DATA=$(oc get secret tpa-secret -n ${APP_CI_NAMESPACE} -o jsonpath='{.data}' 2>/dev/null || echo "")
-    if echo "$TPA_SECRET_DATA" | grep -q "TPA_SERVER_URL"; then
-        echo "✓ PASS: tpa-secret contains TPA_SERVER_URL"
+    if echo "$TPA_SECRET_DATA" | grep -q "bombastic_api_url"; then
+        echo "✓ PASS: tpa-secret contains bombastic_api_url"
     else
-        echo "✗ FAIL: tpa-secret does not contain TPA_SERVER_URL"
+        echo "✗ FAIL: tpa-secret does not contain bombastic_api_url"
         VALIDATION_FAILED=1
     fi
 else
@@ -202,10 +202,10 @@ if oc get secret gitlab-auth-secret -n ${APP_CI_NAMESPACE} &>/dev/null; then
 
     # Verify it contains required data
     GITLAB_SECRET_DATA=$(oc get secret gitlab-auth-secret -n ${APP_CI_NAMESPACE} -o jsonpath='{.data}' 2>/dev/null || echo "")
-    if echo "$GITLAB_SECRET_DATA" | grep -q "GITLAB_TOKEN"; then
-        echo "✓ PASS: gitlab-auth-secret contains GITLAB_TOKEN"
+    if echo "$GITLAB_SECRET_DATA" | grep -q "password"; then
+        echo "✓ PASS: gitlab-auth-secret contains password"
     else
-        echo "✗ FAIL: gitlab-auth-secret does not contain GITLAB_TOKEN"
+        echo "✗ FAIL: gitlab-auth-secret does not contain password"
         VALIDATION_FAILED=1
     fi
 else
