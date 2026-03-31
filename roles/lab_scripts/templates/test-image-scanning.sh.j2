@@ -12,12 +12,8 @@ set -e
 export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
 # Namespace variables
-export ACS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_namespace }}"
 export QUAY_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace }}"
-
-# ACS Configuration
-export ACS_ADMIN_USERNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_username }}"
-export ACS_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_password }}"
+export APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
 
 # Test image configuration
 export QUAY_ORG="tssc"
@@ -35,15 +31,24 @@ echo ""
 echo "Setting up roxctl authentication..."
 echo "------------------------------------"
 
-# Get ACS Central route
-ACS_CENTRAL_URL=$(oc get route central -n ${ACS_NAMESPACE} -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
+# Get ACS credentials from existing secret
+echo "Retrieving ACS credentials from rox-api-token secret..."
 
-if [ -z "$ACS_CENTRAL_URL" ]; then
-    echo "Error: Could not find ACS Central route"
+if ! oc get secret rox-api-token -n ${APP_CI_NAMESPACE} &>/dev/null; then
+    echo "Error: rox-api-token secret not found in ${APP_CI_NAMESPACE}"
     exit 1
 fi
 
-echo "ACS Central URL: https://${ACS_CENTRAL_URL}"
+export ROX_ENDPOINT=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-endpoint}' | base64 -d)
+export ROX_API_TOKEN=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-token}' | base64 -d)
+
+if [ -z "$ROX_ENDPOINT" ] || [ -z "$ROX_API_TOKEN" ]; then
+    echo "Error: Failed to retrieve ACS credentials from secret"
+    exit 1
+fi
+
+echo "✓ ACS endpoint: ${ROX_ENDPOINT}"
+echo "✓ ACS API token retrieved"
 
 # Get Quay route
 QUAY_URL=$(oc get route -n ${QUAY_NAMESPACE} -l quay-component=quay-app-route -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "")
@@ -56,30 +61,6 @@ fi
 # Full image name
 export TEST_IMAGE="${QUAY_URL}/${QUAY_ORG}/${QUAY_REPO}:${IMAGE_TAG}"
 echo "Test image: ${TEST_IMAGE}"
-
-# Authenticate to ACS and get API token
-echo "Authenticating to ACS..."
-ACS_AUTH_RESPONSE=$(curl -k -s -X POST "https://${ACS_CENTRAL_URL}/v1/login" \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"${ACS_ADMIN_USERNAME}\",\"password\":\"${ACS_ADMIN_PASSWORD}\"}" 2>/dev/null || echo "")
-
-if [ -z "$ACS_AUTH_RESPONSE" ]; then
-    echo "Error: Failed to authenticate to ACS"
-    exit 1
-fi
-
-ACS_API_TOKEN=$(echo "$ACS_AUTH_RESPONSE" | jq -r '.token // empty' 2>/dev/null || echo "")
-
-if [ -z "$ACS_API_TOKEN" ]; then
-    echo "Error: Failed to get ACS API token"
-    exit 1
-fi
-
-echo "✓ Authenticated to ACS"
-
-# Configure roxctl environment variables
-export ROX_ENDPOINT="${ACS_CENTRAL_URL}:443"
-export ROX_API_TOKEN="${ACS_API_TOKEN}"
 
 echo "✓ roxctl configured"
 echo ""
