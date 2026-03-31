@@ -175,22 +175,29 @@ export TAS_SSO_REALM=${TAS_SSO_REALM}
 envsubst < $(eval echo "~/lab-assets/tas-instance.yml") | oc apply -n ${TAS_NAMESPACE} -f -
 echo "✓ RHTAS Instance CR applied"
 
-# Step 3.2: Wait for tuf pod to be Running
-echo "Step 3.2: Waiting for tuf pod to be Running..."
+# Step 3.2: Wait for RHTAS instance status URLs to be populated
+echo "Step 3.2: Waiting for RHTAS instance status to be populated..."
 TIMEOUT=600
 ELAPSED=0
 while [ $ELAPSED -lt $TIMEOUT ]; do
-    TUF_STATUS=$(oc get pods -n ${TAS_NAMESPACE} -l app.kubernetes.io/component=tuf -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "NotFound")
-    if [ "$TUF_STATUS" == "Running" ]; then
-        echo "✓ TUF pod is Running"
+    FULCIO_URL=$(oc get securesign trusted-artifact-signer -n ${TAS_NAMESPACE} -o jsonpath='{.status.fulcio.url}' 2>/dev/null || echo "")
+    REKOR_URL=$(oc get securesign trusted-artifact-signer -n ${TAS_NAMESPACE} -o jsonpath='{.status.rekor.url}' 2>/dev/null || echo "")
+    TUF_URL=$(oc get securesign trusted-artifact-signer -n ${TAS_NAMESPACE} -o jsonpath='{.status.tuf.url}' 2>/dev/null || echo "")
+
+    if [ -n "$FULCIO_URL" ] && [ -n "$REKOR_URL" ] && [ -n "$TUF_URL" ]; then
+        echo "✓ RHTAS instance status populated"
+        echo "  Fulcio URL: ${FULCIO_URL}"
+        echo "  Rekor URL: ${REKOR_URL}"
+        echo "  TUF URL: ${TUF_URL}"
         break
     fi
+    echo "Waiting for RHTAS status URLs to be populated..."
     sleep 10
     ELAPSED=$((ELAPSED + 10))
 done
 
 if [ $ELAPSED -ge $TIMEOUT ]; then
-    echo "Error: TUF pod not ready after ${TIMEOUT} seconds"
+    echo "Error: RHTAS instance status not populated after ${TIMEOUT} seconds"
     exit 1
 fi
 echo ""
