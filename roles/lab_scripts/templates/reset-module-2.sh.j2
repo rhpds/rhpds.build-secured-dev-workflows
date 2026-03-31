@@ -52,17 +52,38 @@ echo "---------------------------------------"
 
 if oc get deployment oidc-token-refresher -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
     oc delete deployment oidc-token-refresher -n ${PIPELINES_NAMESPACE}
-    echo "✓ OIDC refresher deployment deleted"
+    # Verify deletion
+    if ! oc get deployment oidc-token-refresher -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
+        echo "✓ OIDC refresher deployment deleted"
+    else
+        echo "Warning: OIDC refresher deployment still exists"
+    fi
+else
+    echo "✓ OIDC refresher deployment not found (already clean)"
 fi
 
 if oc get service oidc-token-refresher -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
     oc delete service oidc-token-refresher -n ${PIPELINES_NAMESPACE}
-    echo "✓ OIDC refresher service deleted"
+    # Verify deletion
+    if ! oc get service oidc-token-refresher -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
+        echo "✓ OIDC refresher service deleted"
+    else
+        echo "Warning: OIDC refresher service still exists"
+    fi
+else
+    echo "✓ OIDC refresher service not found (already clean)"
 fi
 
 if oc get secret oidc-info -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
     oc delete secret oidc-info -n ${PIPELINES_NAMESPACE}
-    echo "✓ OIDC info secret deleted"
+    # Verify deletion
+    if ! oc get secret oidc-info -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
+        echo "✓ OIDC info secret deleted"
+    else
+        echo "Warning: OIDC info secret still exists"
+    fi
+else
+    echo "✓ OIDC info secret not found (already clean)"
 fi
 
 echo "✓ OIDC refresher app removed"
@@ -76,11 +97,26 @@ echo "-----------------------------------"
 
 if oc get securesign -n ${TAS_NAMESPACE} instance 2>/dev/null; then
     oc delete securesign instance -n ${TAS_NAMESPACE}
-    echo "✓ RHTAS instance deleted"
 
-    # Wait for resources to be cleaned up
-    echo "Waiting for RHTAS resources to be cleaned up..."
-    sleep 15
+    # Wait for RHTAS instance to be fully deleted
+    echo "Waiting for RHTAS instance to be fully deleted..."
+    oc wait --for=delete securesign/instance -n ${TAS_NAMESPACE} --timeout=300s 2>/dev/null || true
+
+    # Verify deletion
+    TIMEOUT=60
+    ELAPSED=0
+    while [ $ELAPSED -lt $TIMEOUT ]; do
+        if ! oc get securesign instance -n ${TAS_NAMESPACE} 2>/dev/null; then
+            echo "✓ RHTAS instance deleted"
+            break
+        fi
+        sleep 5
+        ELAPSED=$((ELAPSED + 5))
+    done
+
+    if oc get securesign instance -n ${TAS_NAMESPACE} 2>/dev/null; then
+        echo "Warning: RHTAS instance still exists after timeout"
+    fi
 else
     echo "✓ RHTAS instance not found (already clean)"
 fi
@@ -114,7 +150,16 @@ else
     if [ -n "$SSO_CLIENT_ID" ]; then
         curl -s -X DELETE "${KEYCLOAK_URL}/admin/realms/${TAS_SSO_REALM}/clients/${SSO_CLIENT_ID}" \
           -H "Authorization: Bearer ${ADMIN_TOKEN}"
-        echo "✓ Deleted ${TAS_CLIENT_ID} client from ${TAS_SSO_REALM} realm"
+
+        # Verify client deletion
+        VERIFY_CLIENT=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+          "${KEYCLOAK_URL}/admin/realms/${TAS_SSO_REALM}/clients?clientId=${TAS_CLIENT_ID}" | jq -r '.[0].id // empty')
+
+        if [ -z "$VERIFY_CLIENT" ]; then
+            echo "✓ Deleted ${TAS_CLIENT_ID} client from ${TAS_SSO_REALM} realm"
+        else
+            echo "Warning: ${TAS_CLIENT_ID} client still exists in ${TAS_SSO_REALM} realm"
+        fi
     else
         echo "✓ ${TAS_CLIENT_ID} client not found in ${TAS_SSO_REALM} realm"
     fi
@@ -127,7 +172,17 @@ else
     if [ "$REALM_EXISTS" == "200" ]; then
         curl -s -X DELETE "${KEYCLOAK_URL}/admin/realms/${TAS_CHAINS_REALM}" \
           -H "Authorization: Bearer ${ADMIN_TOKEN}"
-        echo "✓ Deleted ${TAS_CHAINS_REALM} realm"
+
+        # Verify realm deletion
+        VERIFY_REALM=$(curl -s -o /dev/null -w "%{http_code}" \
+          -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+          "${KEYCLOAK_URL}/admin/realms/${TAS_CHAINS_REALM}")
+
+        if [ "$VERIFY_REALM" != "200" ]; then
+            echo "✓ Deleted ${TAS_CHAINS_REALM} realm"
+        else
+            echo "Warning: ${TAS_CHAINS_REALM} realm still exists"
+        fi
     else
         echo "✓ ${TAS_CHAINS_REALM} realm not found"
     fi

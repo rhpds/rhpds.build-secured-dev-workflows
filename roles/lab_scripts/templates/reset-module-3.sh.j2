@@ -33,14 +33,26 @@ echo "-------------------------------------"
 
 if oc get secret tpa-secret -n ${APP_CI_NAMESPACE} 2>/dev/null; then
     oc delete secret tpa-secret -n ${APP_CI_NAMESPACE}
-    echo "✓ tpa-secret deleted"
+
+    # Verify deletion
+    if ! oc get secret tpa-secret -n ${APP_CI_NAMESPACE} 2>/dev/null; then
+        echo "✓ tpa-secret deleted"
+    else
+        echo "Warning: tpa-secret still exists"
+    fi
 else
     echo "✓ tpa-secret not found (already clean)"
 fi
 
 if oc get secret gitlab-auth-secret -n ${APP_CI_NAMESPACE} 2>/dev/null; then
     oc delete secret gitlab-auth-secret -n ${APP_CI_NAMESPACE}
-    echo "✓ gitlab-auth-secret deleted"
+
+    # Verify deletion
+    if ! oc get secret gitlab-auth-secret -n ${APP_CI_NAMESPACE} 2>/dev/null; then
+        echo "✓ gitlab-auth-secret deleted"
+    else
+        echo "Warning: gitlab-auth-secret still exists"
+    fi
 else
     echo "✓ gitlab-auth-secret not found (already clean)"
 fi
@@ -54,7 +66,13 @@ echo "-----------------------------------------"
 
 if oc get configmap tas-git-config -n ${DEVSPACES_NAMESPACE} 2>/dev/null; then
     oc delete configmap tas-git-config -n ${DEVSPACES_NAMESPACE}
-    echo "✓ tas-git-config ConfigMap deleted"
+
+    # Verify deletion
+    if ! oc get configmap tas-git-config -n ${DEVSPACES_NAMESPACE} 2>/dev/null; then
+        echo "✓ tas-git-config ConfigMap deleted"
+    else
+        echo "Warning: tas-git-config ConfigMap still exists"
+    fi
 else
     echo "✓ tas-git-config ConfigMap not found (already clean)"
 fi
@@ -89,7 +107,16 @@ else
         # Delete user
         curl -s -X DELETE "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users/${USER_ID}" \
           -H "Authorization: Bearer ${ADMIN_TOKEN}"
-        echo "✓ Deleted developer user: ${DEVELOPER_USERNAME}"
+
+        # Verify user deletion
+        VERIFY_USER=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+          "${KEYCLOAK_URL}/admin/realms/${SSO_REALM}/users?username=${DEVELOPER_USERNAME}" | jq -r '.[0].id // empty')
+
+        if [ -z "$VERIFY_USER" ]; then
+            echo "✓ Deleted developer user: ${DEVELOPER_USERNAME}"
+        else
+            echo "Warning: Developer user ${DEVELOPER_USERNAME} still exists"
+        fi
     else
         echo "✓ Developer user not found (already clean)"
     fi

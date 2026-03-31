@@ -30,11 +30,26 @@ echo "-----------------------------------"
 
 if oc get tpa -n ${TPA_NAMESPACE} instance 2>/dev/null; then
     oc delete tpa instance -n ${TPA_NAMESPACE}
-    echo "✓ RHTPA instance deleted"
 
-    # Wait for resources to be cleaned up
-    echo "Waiting for RHTPA resources to be cleaned up..."
-    sleep 10
+    # Wait for RHTPA instance to be fully deleted
+    echo "Waiting for RHTPA instance to be fully deleted..."
+    oc wait --for=delete tpa/instance -n ${TPA_NAMESPACE} --timeout=300s 2>/dev/null || true
+
+    # Verify deletion
+    TIMEOUT=60
+    ELAPSED=0
+    while [ $ELAPSED -lt $TIMEOUT ]; do
+        if ! oc get tpa instance -n ${TPA_NAMESPACE} 2>/dev/null; then
+            echo "✓ RHTPA instance deleted"
+            break
+        fi
+        sleep 5
+        ELAPSED=$((ELAPSED + 5))
+    done
+
+    if oc get tpa instance -n ${TPA_NAMESPACE} 2>/dev/null; then
+        echo "Warning: RHTPA instance still exists after timeout"
+    fi
 else
     echo "✓ RHTPA instance not found (already clean)"
 fi
@@ -48,7 +63,13 @@ echo "-----------------------------------------------"
 
 if oc get secret tpa-cli-credentials -n ${TPA_NAMESPACE} 2>/dev/null; then
     oc delete secret tpa-cli-credentials -n ${TPA_NAMESPACE}
-    echo "✓ TPA CLI credentials secret deleted"
+
+    # Verify deletion
+    if ! oc get secret tpa-cli-credentials -n ${TPA_NAMESPACE} 2>/dev/null; then
+        echo "✓ TPA CLI credentials secret deleted"
+    else
+        echo "Warning: TPA CLI credentials secret still exists"
+    fi
 else
     echo "✓ TPA CLI credentials secret not found (already clean)"
 fi
@@ -62,11 +83,17 @@ echo "-------------------------------------"
 
 if oc get keycloakrealmimport ${TPA_REALM} -n ${KEYCLOAK_NAMESPACE} 2>/dev/null; then
     oc delete keycloakrealmimport ${TPA_REALM} -n ${KEYCLOAK_NAMESPACE}
-    echo "✓ TPA Realm import deleted"
 
-    # Wait for realm to be removed
+    # Wait for TPA Realm to be fully deleted
     echo "Waiting for TPA Realm to be removed..."
-    sleep 5
+    oc wait --for=delete keycloakrealmimport/${TPA_REALM} -n ${KEYCLOAK_NAMESPACE} --timeout=60s 2>/dev/null || true
+
+    # Verify deletion
+    if ! oc get keycloakrealmimport ${TPA_REALM} -n ${KEYCLOAK_NAMESPACE} 2>/dev/null; then
+        echo "✓ TPA Realm import deleted"
+    else
+        echo "Warning: TPA Realm import still exists"
+    fi
 else
     echo "✓ TPA Realm import not found (already clean)"
 fi
