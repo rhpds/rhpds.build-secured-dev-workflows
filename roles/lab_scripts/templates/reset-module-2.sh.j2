@@ -285,9 +285,25 @@ else
     echo "Quay URL: https://${QUAY_URL}"
     echo "Checking repository: ${QUAY_ORG}/${QUAY_REPO}"
 
+    # Get OAuth token from Quay
+    TOKEN_RESPONSE=$(curl -k -s -X POST "https://${QUAY_URL}/api/v1/user/initialize" \
+      -H "Content-Type: application/json" \
+      -d "{\"username\":\"${QUAY_ADMIN_USER}\",\"password\":\"${QUAY_ADMIN_PASSWORD}\"}" 2>/dev/null || true)
+
+    # Try to extract token, if not available use basic auth
+    QUAY_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.token // empty' 2>/dev/null || true)
+
+    if [ -n "$QUAY_TOKEN" ]; then
+        echo "Using OAuth token authentication"
+        AUTH_HEADER="Authorization: Bearer ${QUAY_TOKEN}"
+    else
+        echo "Using Basic authentication"
+        AUTH_HEADER="Authorization: Basic $(echo -n ${QUAY_ADMIN_USER}:${QUAY_ADMIN_PASSWORD} | base64)"
+    fi
+
     # Check if repository exists first
     CHECK_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" \
-      -u "${QUAY_ADMIN_USER}:${QUAY_ADMIN_PASSWORD}" \
+      -H "${AUTH_HEADER}" \
       "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
 
     if [ "$CHECK_CODE" == "404" ]; then
@@ -296,7 +312,7 @@ else
         echo "Repository exists, deleting..."
         # Delete repository using Quay API
         HTTP_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" -X DELETE \
-          -u "${QUAY_ADMIN_USER}:${QUAY_ADMIN_PASSWORD}" \
+          -H "${AUTH_HEADER}" \
           "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
 
         if [ "$HTTP_CODE" == "204" ] || [ "$HTTP_CODE" == "200" ]; then
@@ -304,6 +320,10 @@ else
         else
             echo "Warning: Failed to delete Quay repository (HTTP: ${HTTP_CODE})"
         fi
+    elif [ "$CHECK_CODE" == "401" ]; then
+        echo "Warning: Authentication failed for Quay (HTTP: 401)"
+        echo "  Check QUAY_ADMIN_USER and QUAY_ADMIN_PASSWORD"
+        echo "  Skipping deletion"
     else
         echo "Warning: Could not check Quay repository (HTTP: ${CHECK_CODE})"
         echo "  Skipping deletion"
