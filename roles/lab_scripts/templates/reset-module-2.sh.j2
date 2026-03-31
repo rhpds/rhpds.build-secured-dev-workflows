@@ -283,19 +283,30 @@ if [ -z "$QUAY_URL" ]; then
     echo "Warning: Could not find Quay route, skipping repository deletion"
 else
     echo "Quay URL: https://${QUAY_URL}"
-    echo "Deleting repository: ${QUAY_ORG}/${QUAY_REPO}"
+    echo "Checking repository: ${QUAY_ORG}/${QUAY_REPO}"
 
-    # Delete repository using Quay API
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+    # Check if repository exists first
+    CHECK_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" \
       -u "${QUAY_ADMIN_USER}:${QUAY_ADMIN_PASSWORD}" \
       "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
 
-    if [ "$HTTP_CODE" == "204" ] || [ "$HTTP_CODE" == "200" ]; then
-        echo "✓ Quay repository deleted: ${QUAY_ORG}/${QUAY_REPO}"
-    elif [ "$HTTP_CODE" == "404" ]; then
+    if [ "$CHECK_CODE" == "404" ]; then
         echo "✓ Quay repository not found (already clean): ${QUAY_ORG}/${QUAY_REPO}"
+    elif [ "$CHECK_CODE" == "200" ]; then
+        echo "Repository exists, deleting..."
+        # Delete repository using Quay API
+        HTTP_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" -X DELETE \
+          -u "${QUAY_ADMIN_USER}:${QUAY_ADMIN_PASSWORD}" \
+          "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
+
+        if [ "$HTTP_CODE" == "204" ] || [ "$HTTP_CODE" == "200" ]; then
+            echo "✓ Quay repository deleted: ${QUAY_ORG}/${QUAY_REPO}"
+        else
+            echo "Warning: Failed to delete Quay repository (HTTP: ${HTTP_CODE})"
+        fi
     else
-        echo "Warning: Failed to delete Quay repository (HTTP: ${HTTP_CODE})"
+        echo "Warning: Could not check Quay repository (HTTP: ${CHECK_CODE})"
+        echo "  Skipping deletion"
     fi
 fi
 echo ""
