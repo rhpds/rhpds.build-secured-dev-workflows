@@ -11,10 +11,7 @@ export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
 # Namespace variables
 export ACS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_namespace }}"
-
-# ACS Configuration
-export ACS_ADMIN_USERNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_username }}"
-export ACS_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_password }}"
+export APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
 
 # Hard-coded integration name
 ACS_INTEGRATION_NAME="acs_quay"
@@ -30,56 +27,47 @@ echo ""
 echo "Step 1: Deleting ACS-Quay integration..."
 echo "-----------------------------------------"
 
-# Get ACS Central route
-ACS_CENTRAL_URL=$(oc get route central -n ${ACS_NAMESPACE} -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
-
-if [ -z "$ACS_CENTRAL_URL" ]; then
-    echo "Warning: Could not find ACS Central route, skipping integration deletion"
+# Get ACS credentials from rox-api-token secret
+if ! oc get secret rox-api-token -n ${APP_CI_NAMESPACE} &>/dev/null; then
+    echo "Warning: rox-api-token secret not found in ${APP_CI_NAMESPACE}, skipping integration deletion"
 else
-    echo "ACS Central URL: https://${ACS_CENTRAL_URL}"
+    export ROX_ENDPOINT=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-endpoint}' | base64 -d)
+    export ACS_API_TOKEN=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-token}' | base64 -d)
 
-    # Authenticate to ACS and get API token
-    echo "Authenticating to ACS..."
-    ACS_AUTH_RESPONSE=$(curl -k -s -X POST "https://${ACS_CENTRAL_URL}/v1/login" \
-      -H "Content-Type: application/json" \
-      -d "{\"username\":\"${ACS_ADMIN_USERNAME}\",\"password\":\"${ACS_ADMIN_PASSWORD}\"}" 2>/dev/null || echo "")
-
-    if [ -z "$ACS_AUTH_RESPONSE" ]; then
-        echo "Warning: Failed to authenticate to ACS, skipping integration deletion"
+    if [ -z "$ROX_ENDPOINT" ] || [ -z "$ACS_API_TOKEN" ]; then
+        echo "Warning: Failed to retrieve ACS credentials from secret, skipping integration deletion"
     else
-        ACS_API_TOKEN=$(echo "$ACS_AUTH_RESPONSE" | jq -r '.token // empty' 2>/dev/null || echo "")
+        # Extract hostname from ROX_ENDPOINT
+        ACS_CENTRAL_URL=$(echo "$ROX_ENDPOINT" | sed 's|https://||' | sed 's|:443||')
 
-        if [ -z "$ACS_API_TOKEN" ]; then
-            echo "Warning: Failed to get ACS API token, skipping integration deletion"
+        echo "ACS Central URL: https://${ACS_CENTRAL_URL}"
+        echo "✓ ACS API token retrieved"
+
+        # Check if integration exists
+        echo "Checking for integration: ${ACS_INTEGRATION_NAME}..."
+        INTEGRATION_ID=$(curl -k -s -X GET "https://${ACS_CENTRAL_URL}/v1/imageintegrations" \
+          -H "Authorization: Bearer ${ACS_API_TOKEN}" 2>/dev/null | jq -r ".integrations[] | select(.name==\"${ACS_INTEGRATION_NAME}\") | .id" 2>/dev/null || echo "")
+
+        if [ -z "$INTEGRATION_ID" ]; then
+            echo "✓ Integration '${ACS_INTEGRATION_NAME}' not found (already clean)"
         else
-            echo "✓ Authenticated to ACS"
+            echo "Found integration (ID: ${INTEGRATION_ID}), deleting..."
+            DELETE_RESPONSE=$(curl -k -s -o /dev/null -w "%{http_code}" -X DELETE \
+              "https://${ACS_CENTRAL_URL}/v1/imageintegrations/${INTEGRATION_ID}" \
+              -H "Authorization: Bearer ${ACS_API_TOKEN}" 2>/dev/null || echo "000")
 
-            # Check if integration exists
-            echo "Checking for integration: ${ACS_INTEGRATION_NAME}..."
-            INTEGRATION_ID=$(curl -k -s -X GET "https://${ACS_CENTRAL_URL}/v1/imageintegrations" \
-              -H "Authorization: Bearer ${ACS_API_TOKEN}" 2>/dev/null | jq -r ".integrations[] | select(.name==\"${ACS_INTEGRATION_NAME}\") | .id" 2>/dev/null || echo "")
+            if [ "$DELETE_RESPONSE" == "200" ] || [ "$DELETE_RESPONSE" == "204" ]; then
+                # Verify deletion
+                VERIFY_INTEGRATION=$(curl -k -s -X GET "https://${ACS_CENTRAL_URL}/v1/imageintegrations" \
+                  -H "Authorization: Bearer ${ACS_API_TOKEN}" 2>/dev/null | jq -r ".integrations[] | select(.name==\"${ACS_INTEGRATION_NAME}\") | .id" 2>/dev/null || echo "")
 
-            if [ -z "$INTEGRATION_ID" ]; then
-                echo "✓ Integration '${ACS_INTEGRATION_NAME}' not found (already clean)"
-            else
-                echo "Found integration (ID: ${INTEGRATION_ID}), deleting..."
-                DELETE_RESPONSE=$(curl -k -s -o /dev/null -w "%{http_code}" -X DELETE \
-                  "https://${ACS_CENTRAL_URL}/v1/imageintegrations/${INTEGRATION_ID}" \
-                  -H "Authorization: Bearer ${ACS_API_TOKEN}" 2>/dev/null || echo "000")
-
-                if [ "$DELETE_RESPONSE" == "200" ] || [ "$DELETE_RESPONSE" == "204" ]; then
-                    # Verify deletion
-                    VERIFY_INTEGRATION=$(curl -k -s -X GET "https://${ACS_CENTRAL_URL}/v1/imageintegrations" \
-                      -H "Authorization: Bearer ${ACS_API_TOKEN}" 2>/dev/null | jq -r ".integrations[] | select(.name==\"${ACS_INTEGRATION_NAME}\") | .id" 2>/dev/null || echo "")
-
-                    if [ -z "$VERIFY_INTEGRATION" ]; then
-                        echo "✓ ACS-Quay integration deleted"
-                    else
-                        echo "Warning: Integration still exists after deletion"
-                    fi
+                if [ -z "$VERIFY_INTEGRATION" ]; then
+                    echo "✓ ACS-Quay integration deleted"
                 else
-                    echo "Warning: Failed to delete integration (HTTP: ${DELETE_RESPONSE})"
+                    echo "Warning: Integration still exists after deletion"
                 fi
+            else
+                echo "Warning: Failed to delete integration (HTTP: ${DELETE_RESPONSE})"
             fi
         fi
     fi
