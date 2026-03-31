@@ -7,6 +7,9 @@
 
 set -e
 
+# Initialize environment variables
+export LAB_ASSETS_DIR="{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}"
+
 echo "========================================="
 echo "Solving Module 2: RHTAS Installation"
 echo "========================================="
@@ -15,19 +18,19 @@ echo ""
 # Step 0: Reset Module 2
 echo "Running Step 0: Reset Module 2..."
 echo "=================================="
-bash ~/lab-assets/reset-module-2.sh
+bash ${LAB_ASSETS_DIR}/reset-module-2.sh
 echo ""
 
 # Step 1: Install RHTAS
 echo "Running Step 1: Install RHTAS..."
 echo "================================="
-bash ~/lab-assets/install-rhtas.sh
+bash ${LAB_ASSETS_DIR}/install-rhtas.sh
 echo ""
 
 # Step 2: Test Image Signing
 echo "Running Step 2: Test Image Signing..."
 echo "======================================"
-bash ~/lab-assets/test-image-signing.sh
+bash ${LAB_ASSETS_DIR}/test-image-signing.sh
 echo ""
 
 echo "========================================="

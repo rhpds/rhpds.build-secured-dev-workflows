@@ -7,6 +7,9 @@
 
 set -e
 
+# Initialize environment variables
+export LAB_ASSETS_DIR="{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}"
+
 echo "========================================="
 echo "Solving Module 4: Policy Enforcement"
 echo "========================================="
@@ -15,19 +18,19 @@ echo ""
 # Step 0: Reset Module 4
 echo "Running Step 0: Reset Module 4..."
 echo "=================================="
-bash ~/lab-assets/reset-module-4.sh
+bash ${LAB_ASSETS_DIR}/reset-module-4.sh
 echo ""
 
 # Step 1: Configure ACS-Quay Integration
 echo "Running Step 1: Configure ACS..."
 echo "================================="
-bash ~/lab-assets/configure-acs.sh
+bash ${LAB_ASSETS_DIR}/configure-acs.sh
 echo ""
 
 # Step 2: Test Image Scanning
 echo "Running Step 2: Test Image Scanning..."
 echo "======================================="
-bash ~/lab-assets/test-image-scanning.sh
+bash ${LAB_ASSETS_DIR}/test-image-scanning.sh
 echo ""
 
 echo "========================================="

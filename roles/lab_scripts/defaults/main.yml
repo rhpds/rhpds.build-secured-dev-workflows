@@ -19,7 +19,7 @@ rhpds_build_secured_dev_workflows_lab_scripts_tpa_admin_password: "openshift"
 rhpds_build_secured_dev_workflows_lab_scripts_tpa_cli_client_secret: "5460cc91-4e20-4edd-881c-b15b169f8a79"
 
 # SBOM configuration
-rhpds_build_secured_dev_workflows_lab_scripts_tpa_example_sbom_path: ~/lab-assets/example-sbom.json
+rhpds_build_secured_dev_workflows_lab_scripts_tpa_example_sbom_path: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/example-sbom.json"
 rhpds_build_secured_dev_workflows_lab_scripts_tpa_sbom_id: test-sbom
 
 # Module 2: TAS Configuration

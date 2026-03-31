@@ -15,9 +15,9 @@
     mode: '0755'
   delegate_to: bastion
 
-- name: Copy solve-module-4.sh script
-  ansible.builtin.copy:
-    src: solve-module-4.sh
+- name: Generate solve-module-4.sh script
+  ansible.builtin.template:
+    src: solve-module-4.sh.j2
     dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-4.sh"
     mode: '0755'
   delegate_to: bastion

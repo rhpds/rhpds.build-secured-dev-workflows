@@ -7,6 +7,9 @@
 
 set -e
 
+# Initialize environment variables
+export LAB_ASSETS_DIR="{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}"
+
 echo "========================================="
 echo "Solving Module 3: Developer Setup"
 echo "========================================="
@@ -15,37 +18,37 @@ echo ""
 # Step 0: Reset Module 3
 echo "Running Step 0: Reset Module 3..."
 echo "=================================="
-bash ~/lab-assets/reset-module-3.sh
+bash ${LAB_ASSETS_DIR}/reset-module-3.sh
 echo ""
 
 # Step 1: Create Developer User
 echo "Running Step 1: Create Developer User..."
 echo "========================================="
-bash ~/lab-assets/create-developer-user.sh
+bash ${LAB_ASSETS_DIR}/create-developer-user.sh
 echo ""
 
 # Step 2: Update GitOps Backstage Configuration
 echo "Running Step 2: Update GitOps Backstage Configuration..."
 echo "========================================================="
-bash ~/lab-assets/update-gitops-backstage-config.sh update
+bash ${LAB_ASSETS_DIR}/update-gitops-backstage-config.sh update
 echo ""
 
 # Step 3: Update RHDH Devfile Configuration
 echo "Running Step 3: Update RHDH Devfile Configuration..."
 echo "====================================================="
-bash ~/lab-assets/update-rhdh-devfile-config.sh update
+bash ${LAB_ASSETS_DIR}/update-rhdh-devfile-config.sh update
 echo ""
 
 # Step 4: Create Dev Spaces ConfigMap
 echo "Running Step 4: Create Dev Spaces ConfigMap..."
 echo "==============================================="
-bash ~/lab-assets/create-devspaces-configmap.sh
+bash ${LAB_ASSETS_DIR}/create-devspaces-configmap.sh
 echo ""
 
 # Step 5: Create Pipeline Secrets
 echo "Running Step 5: Create Pipeline Secrets..."
 echo "==========================================="
-bash ~/lab-assets/create-pipeline-secrets.sh
+bash ${LAB_ASSETS_DIR}/create-pipeline-secrets.sh
 echo ""
 
 echo "========================================="
