@@ -45,10 +45,18 @@ TIMEOUT=120
 ELAPSED=0
 TOKEN_EP=""
 while [ $ELAPSED -lt $TIMEOUT ]; do
-    TOKEN_EP=$(curl -s "$KEYCLOAK_URL/realms/$TPA_REALM/.well-known/openid-configuration" 2>/dev/null | jq -r .token_endpoint 2>/dev/null)
-    if [ -n "$TOKEN_EP" ] && [ "$TOKEN_EP" != "null" ]; then
-        echo "✓ Token endpoint available: $TOKEN_EP"
-        break
+    # First check if the endpoint is available
+    OIDC_RESPONSE=$(curl -s -w "\n%{http_code}" "$KEYCLOAK_URL/realms/$TPA_REALM/.well-known/openid-configuration" 2>/dev/null)
+    HTTP_CODE=$(echo "$OIDC_RESPONSE" | tail -n1)
+    OIDC_BODY=$(echo "$OIDC_RESPONSE" | sed '$d')
+
+    if [ "$HTTP_CODE" = "200" ] && [ -n "$OIDC_BODY" ]; then
+        # Only use jq if we got a valid response
+        TOKEN_EP=$(echo "$OIDC_BODY" | jq -r .token_endpoint 2>/dev/null)
+        if [ -n "$TOKEN_EP" ] && [ "$TOKEN_EP" != "null" ]; then
+            echo "✓ Token endpoint available: $TOKEN_EP"
+            break
+        fi
     fi
     echo "Waiting for Keycloak TPA realm to be available..."
     sleep 5
@@ -62,13 +70,20 @@ fi
 
 # Get access token
 echo "Getting OAuth access token..."
-TOKEN=$(curl -s -X POST "$TOKEN_EP" \
+TOKEN_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$TOKEN_EP" \
   -d grant_type=client_credentials \
   -d client_id="cli" \
-  -d client_secret="$TPA_CLI_CLIENT_SECRET" 2>/dev/null | jq -r .access_token 2>/dev/null)
+  -d client_secret="$TPA_CLI_CLIENT_SECRET" 2>/dev/null)
+TOKEN_HTTP_CODE=$(echo "$TOKEN_RESPONSE" | tail -n1)
+TOKEN_BODY=$(echo "$TOKEN_RESPONSE" | sed '$d')
+
+if [ "$TOKEN_HTTP_CODE" = "200" ] && [ -n "$TOKEN_BODY" ]; then
+    # Only use jq if we got a valid response
+    TOKEN=$(echo "$TOKEN_BODY" | jq -r .access_token 2>/dev/null)
+fi
 
 if [ -z "$TOKEN" ] || [ "$TOKEN" == "null" ]; then
-    echo "Error: Failed to get OAuth access token"
+    echo "Error: Failed to get OAuth access token (HTTP: $TOKEN_HTTP_CODE)"
     exit 1
 fi
 echo "✓ OAuth access token obtained"
