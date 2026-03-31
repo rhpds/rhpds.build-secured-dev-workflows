@@ -22,7 +22,7 @@ fi
 # Initialize environment variables
 export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 export GITLAB_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}"
-export REPO_URL="https://gitlab-${GITLAB_NAMESPACE}.apps.${CLUSTER_DOMAIN}/gitops/build-secured-dev-workflows-idp-gitops"
+export REPO_URL="https://gitlab-${GITLAB_NAMESPACE}.${CLUSTER_DOMAIN}/gitops/build-secured-dev-workflows-idp-gitops"
 export USERNAME="root"
 export PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}"
 export TARGET_FILE="charts/backstage/backstage-values.yaml"

@@ -6,7 +6,7 @@
 #######################################
 - name: Clone GitOps backstage repo to find latest commit ID
   ansible.builtin.git:
-    repo: "https://root:{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}@gitlab-{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}.apps.{{ openshift_cluster_ingress_domain }}/gitops/build-secured-dev-workflows-idp-gitops"
+    repo: "https://root:{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}@gitlab-{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}.{{ openshift_cluster_ingress_domain }}/gitops/build-secured-dev-workflows-idp-gitops"
     dest: /tmp/gitops-backstage-clone
     clone: true
     update: true
@@ -39,7 +39,7 @@
 #######################################
 - name: Clone RHDH devfile repo to find latest commit ID
   ansible.builtin.git:
-    repo: "https://root:{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}@gitlab-{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}.apps.{{ openshift_cluster_ingress_domain }}/rhdh/build-secured-dev-workflows-idp-configuration"
+    repo: "https://root:{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}@gitlab-{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}.{{ openshift_cluster_ingress_domain }}/rhdh/build-secured-dev-workflows-idp-configuration"
     dest: /tmp/rhdh-devfile-clone
     clone: true
     update: true
