@@ -272,9 +272,39 @@ echo ""
 echo "Step 5: Configure Tekton Chains"
 echo "--------------------------------"
 
-echo "Step 5.1: Patching Tekton configuration..."
+echo "Step 5.1: Getting current tekton-chains-controller pod..."
+OLD_CHAINS_POD=$(oc get pods -n ${PIPELINES_NAMESPACE} -l app=tekton-chains-controller -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "NotFound")
+echo "Current pod: ${OLD_CHAINS_POD}"
+
+echo "Step 5.2: Patching Tekton configuration..."
 oc patch tektonconfig config -n ${PIPELINES_NAMESPACE} --type=merge --patch "$(cat $(eval echo "~/lab-assets/tekton-chains-patch.yml"))"
-echo "✓ Tekton Chains configured"
+echo "✓ Tekton Chains patch applied"
+
+echo "Step 5.3: Waiting for tekton-chains-controller pod to be recreated..."
+TIMEOUT=180
+ELAPSED=0
+while [ $ELAPSED -lt $TIMEOUT ]; do
+    NEW_CHAINS_POD=$(oc get pods -n ${PIPELINES_NAMESPACE} -l app=tekton-chains-controller -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "NotFound")
+
+    # Check if pod name changed
+    if [ "$NEW_CHAINS_POD" != "$OLD_CHAINS_POD" ] && [ "$NEW_CHAINS_POD" != "NotFound" ]; then
+        # Check if new pod is ready
+        POD_READY=$(oc get pod ${NEW_CHAINS_POD} -n ${PIPELINES_NAMESPACE} -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null || echo "False")
+        if [ "$POD_READY" == "True" ]; then
+            echo "✓ Tekton Chains controller pod recreated and ready: ${NEW_CHAINS_POD}"
+            break
+        fi
+    fi
+
+    echo "Waiting for tekton-chains-controller pod to be recreated and ready..."
+    sleep 5
+    ELAPSED=$((ELAPSED + 5))
+done
+
+if [ $ELAPSED -ge $TIMEOUT ]; then
+    echo "Error: tekton-chains-controller pod not recreated or not ready after ${TIMEOUT} seconds"
+    exit 1
+fi
 echo ""
 
 echo "========================================="
