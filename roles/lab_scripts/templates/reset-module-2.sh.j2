@@ -263,6 +263,42 @@ if [ "$ORPHANED_COUNT" -gt 0 ]; then
 fi
 echo ""
 
+#######################################
+# Step 6: Delete Quay Test Repository
+#######################################
+echo "Step 6: Deleting Quay test repository..."
+echo "-----------------------------------------"
+
+# Get Quay route
+QUAY_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace }}"
+QUAY_URL=$(oc get route -n ${QUAY_NAMESPACE} -l quay-component=quay-app-route -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "")
+
+if [ -z "$QUAY_URL" ]; then
+    echo "Warning: Could not find Quay route, skipping repository deletion"
+else
+    QUAY_ADMIN_USER="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_username }}"
+    QUAY_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_password }}"
+    QUAY_ORG="tssc"
+    QUAY_REPO="tekton-chains-test"
+
+    echo "Quay URL: https://${QUAY_URL}"
+    echo "Deleting repository: ${QUAY_ORG}/${QUAY_REPO}"
+
+    # Delete repository using Quay API
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X DELETE \
+      -u "${QUAY_ADMIN_USER}:${QUAY_ADMIN_PASSWORD}" \
+      "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
+
+    if [ "$HTTP_CODE" == "204" ] || [ "$HTTP_CODE" == "200" ]; then
+        echo "✓ Quay repository deleted: ${QUAY_ORG}/${QUAY_REPO}"
+    elif [ "$HTTP_CODE" == "404" ]; then
+        echo "✓ Quay repository not found (already clean): ${QUAY_ORG}/${QUAY_REPO}"
+    else
+        echo "Warning: Failed to delete Quay repository (HTTP: ${HTTP_CODE})"
+    fi
+fi
+echo ""
+
 echo "========================================="
 echo "Module 2 Reset Complete!"
 echo "========================================="
@@ -275,4 +311,5 @@ echo "  ✓ RHTAS instance removed (Fulcio, Rekor, TUF)"
 echo "  ✓ tas-chains realm deleted from Keycloak"
 echo "  ✓ trusted-artifact-signer client removed from sso realm"
 echo "  ✓ Test TaskRuns cleaned up"
+echo "  ✓ Quay test repository removed (tssc/tekton-chains-test)"
 echo ""
