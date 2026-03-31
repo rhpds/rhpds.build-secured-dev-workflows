@@ -72,12 +72,12 @@ echo "-----------------------------------"
 if oc get trustedprofileanalyzer trustedprofileanalyzer -n ${TPA_NAMESPACE} &>/dev/null; then
     echo "✓ PASS: RHTPA instance exists"
 
-    # Check if TUF pod is running
-    TUF_STATUS=$(oc get pods -n ${TPA_NAMESPACE} -l app.kubernetes.io/component=tuf -o jsonpath='{.items[0].status.phase}' 2>/dev/null || echo "NotFound")
-    if [ "$TUF_STATUS" == "Running" ]; then
-        echo "✓ PASS: TUF pod is Running"
+    # Check if TPA instance is deployed
+    TPA_DEPLOYED_STATUS=$(oc get trustedprofileanalyzer trustedprofileanalyzer -n ${TPA_NAMESPACE} -o jsonpath='{.status.conditions[?(@.type=="Deployed")].status}' 2>/dev/null || echo "Unknown")
+    if [ "$TPA_DEPLOYED_STATUS" == "True" ]; then
+        echo "✓ PASS: RHTPA instance is deployed"
     else
-        echo "✗ FAIL: TUF pod status is: ${TUF_STATUS}"
+        echo "✗ FAIL: RHTPA instance deployed status is: ${TPA_DEPLOYED_STATUS}"
         VALIDATION_FAILED=1
     fi
 else
