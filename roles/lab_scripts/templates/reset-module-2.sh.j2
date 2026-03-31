@@ -33,13 +33,26 @@ echo ""
 echo "Step 1: Reverting Tekton Chains configuration..."
 echo "-------------------------------------------------"
 
-# Reset Tekton Chains to default configuration
+# Reset Tekton Chains to default configuration - remove all fields set by tekton-chains-patch.yml
 # Remove each field individually to avoid errors if some fields don't exist
 CHAIN_FIELDS=(
+  "artifacts.oci.format"
+  "artifacts.oci.signer"
   "artifacts.oci.storage"
+  "artifacts.pipelinerun.format"
+  "artifacts.pipelinerun.storage"
   "artifacts.taskrun.format"
+  "artifacts.taskrun.signer"
   "artifacts.taskrun.storage"
+  "disabled"
+  "options"
+  "signers.x509.fulcio.address"
+  "signers.x509.fulcio.enabled"
+  "signers.x509.fulcio.issuer"
+  "signers.x509.identity.token.file"
+  "signers.x509.tuf.mirror.url"
   "transparency.enabled"
+  "transparency.url"
 )
 
 for field in "${CHAIN_FIELDS[@]}"; do
