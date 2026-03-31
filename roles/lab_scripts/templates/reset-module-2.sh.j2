@@ -16,11 +16,18 @@ KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_na
 TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
 PIPELINES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_pipelines_namespace }}"
 APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
+QUAY_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace }}"
 
 # TAS Configuration
 TAS_CHAINS_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_chains_realm }}"
 TAS_SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
 TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
+
+# Quay Configuration
+QUAY_ADMIN_USER="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_username }}"
+QUAY_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_password }}"
+QUAY_ORG="tssc"
+QUAY_REPO="tekton-chains-test"
 
 echo "========================================="
 echo "Resetting Module 2: RHTAS Installation"
@@ -270,17 +277,11 @@ echo "Step 6: Deleting Quay test repository..."
 echo "-----------------------------------------"
 
 # Get Quay route
-QUAY_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace }}"
 QUAY_URL=$(oc get route -n ${QUAY_NAMESPACE} -l quay-component=quay-app-route -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "")
 
 if [ -z "$QUAY_URL" ]; then
     echo "Warning: Could not find Quay route, skipping repository deletion"
 else
-    QUAY_ADMIN_USER="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_username }}"
-    QUAY_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_admin_password }}"
-    QUAY_ORG="tssc"
-    QUAY_REPO="tekton-chains-test"
-
     echo "Quay URL: https://${QUAY_URL}"
     echo "Deleting repository: ${QUAY_ORG}/${QUAY_REPO}"
 
