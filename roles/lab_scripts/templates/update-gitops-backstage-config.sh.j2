@@ -26,7 +26,7 @@ export REPO_URL="https://gitlab-${GITLAB_NAMESPACE}.apps.${CLUSTER_DOMAIN}/gitop
 export USERNAME="root"
 export PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}"
 export TARGET_FILE="charts/backstage/backstage-values.yaml"
-export COMMIT_MESSAGE="Templating process completed"
+export COMMIT_ID_FILE="{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/gitops-backstage-commit-id"
 export CLONE_DIR="/tmp/build-secured-dev-workflows-idp-gitops"
 
 echo "========================================="
@@ -62,16 +62,21 @@ echo "✓ Repository cloned"
 echo ""
 
 #######################################
-# Step 2: Find Initial Commit
+# Step 2: Read Initial Commit ID
 #######################################
-echo "Step 2: Finding initial commit..."
-echo "----------------------------------"
+echo "Step 2: Reading initial commit ID..."
+echo "-------------------------------------"
 
-# Find the commit with the target message (partial match)
-INITIAL_COMMIT=$(git log --all --grep="Templating process completed" --format="%H" | head -n 1)
+# Read the commit ID from file
+if [ ! -f "$COMMIT_ID_FILE" ]; then
+    echo "✗ Error: Commit ID file not found: ${COMMIT_ID_FILE}"
+    exit 1
+fi
+
+INITIAL_COMMIT=$(cat "$COMMIT_ID_FILE")
 
 if [ -z "$INITIAL_COMMIT" ]; then
-    echo "✗ Error: Could not find commit with message containing '${COMMIT_MESSAGE}'"
+    echo "✗ Error: Commit ID file is empty: ${COMMIT_ID_FILE}"
     exit 1
 fi
 

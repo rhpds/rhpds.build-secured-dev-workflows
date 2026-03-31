@@ -26,7 +26,7 @@ export REPO_URL="https://gitlab-${GITLAB_NAMESPACE}.apps.${CLUSTER_DOMAIN}/rhdh/
 export USERNAME="root"
 export PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}"
 export TARGET_FILE="scaffolder-templates/quarkus-stssc-template/skeleton/.devfile.yaml"
-export TARGET_COMMIT="9bbb3bb93143bda698c2f01982cad858271eabdc"
+export COMMIT_ID_FILE="{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/rhdh-devfile-commit-id"
 export CLONE_DIR="/tmp/build-secured-dev-workflows-idp-configuration"
 
 echo "========================================="
@@ -62,10 +62,23 @@ echo "✓ Repository cloned"
 echo ""
 
 #######################################
-# Step 2: Reset to Target Commit
+# Step 2: Read and Reset to Target Commit
 #######################################
-echo "Step 2: Resetting to target commit..."
-echo "--------------------------------------"
+echo "Step 2: Reading target commit ID and resetting..."
+echo "--------------------------------------------------"
+
+# Read the commit ID from file
+if [ ! -f "$COMMIT_ID_FILE" ]; then
+    echo "✗ Error: Commit ID file not found: ${COMMIT_ID_FILE}"
+    exit 1
+fi
+
+TARGET_COMMIT=$(cat "$COMMIT_ID_FILE")
+
+if [ -z "$TARGET_COMMIT" ]; then
+    echo "✗ Error: Commit ID file is empty: ${COMMIT_ID_FILE}"
+    exit 1
+fi
 
 # Reset to the specific commit
 git reset --hard "$TARGET_COMMIT"

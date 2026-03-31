@@ -1,6 +1,75 @@
 ---
 # Module 3: RHDH Developer Workflow Configuration Tasks
 
+#######################################
+# Capture GitOps Backstage Commit ID
+#######################################
+- name: Clone GitOps backstage repo to find latest commit ID
+  ansible.builtin.git:
+    repo: "https://root:{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}@gitlab-{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}.apps.{{ openshift_cluster_ingress_domain }}/gitops/build-secured-dev-workflows-idp-gitops"
+    dest: /tmp/gitops-backstage-clone
+    clone: true
+    update: true
+    force: true
+  delegate_to: bastion
+
+- name: Get latest GitOps backstage commit ID
+  ansible.builtin.shell: |
+    cd /tmp/gitops-backstage-clone
+    git rev-parse HEAD
+  register: gitops_commit_result
+  changed_when: false
+  delegate_to: bastion
+
+- name: Save GitOps backstage commit ID to file
+  ansible.builtin.copy:
+    content: "{{ gitops_commit_result.stdout }}"
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/gitops-backstage-commit-id"
+    mode: '0644'
+  delegate_to: bastion
+
+- name: Clean up GitOps clone directory
+  ansible.builtin.file:
+    path: /tmp/gitops-backstage-clone
+    state: absent
+  delegate_to: bastion
+
+#######################################
+# Capture RHDH Devfile Commit ID
+#######################################
+- name: Clone RHDH devfile repo to find latest commit ID
+  ansible.builtin.git:
+    repo: "https://root:{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_root_password }}@gitlab-{{ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace }}.apps.{{ openshift_cluster_ingress_domain }}/rhdh/build-secured-dev-workflows-idp-configuration"
+    dest: /tmp/rhdh-devfile-clone
+    clone: true
+    update: true
+    force: true
+  delegate_to: bastion
+
+- name: Get latest RHDH devfile commit ID
+  ansible.builtin.shell: |
+    cd /tmp/rhdh-devfile-clone
+    git rev-parse HEAD
+  register: rhdh_commit_result
+  changed_when: false
+  delegate_to: bastion
+
+- name: Save RHDH devfile commit ID to file
+  ansible.builtin.copy:
+    content: "{{ rhdh_commit_result.stdout }}"
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/rhdh-devfile-commit-id"
+    mode: '0644'
+  delegate_to: bastion
+
+- name: Clean up RHDH clone directory
+  ansible.builtin.file:
+    path: /tmp/rhdh-devfile-clone
+    state: absent
+  delegate_to: bastion
+
+#######################################
+# Generate Module 3 Scripts
+#######################################
 - name: Generate create-developer-user.sh script
   ansible.builtin.template:
     src: create-developer-user.sh.j2
@@ -69,6 +138,10 @@
     - "  solve-module-3.sh"
     - "  reset-module-3.sh"
     - "  validate-module-3.sh"
+    - ""
+    - "Commit ID files (used by update scripts):"
+    - "  gitops-backstage-commit-id ({{ gitops_commit_result.stdout[:7] }})"
+    - "  rhdh-devfile-commit-id ({{ rhdh_commit_result.stdout[:7] }})"
 
 - name: Save Module 3 script information
   agnosticd.core.agnosticd_user_info:
@@ -81,3 +154,5 @@
       module_3_solve_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-3.sh"
       module_3_reset_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-3.sh"
       module_3_validate_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-3.sh"
+      gitops_backstage_commit_id: "{{ gitops_commit_result.stdout }}"
+      rhdh_devfile_commit_id: "{{ rhdh_commit_result.stdout }}"
