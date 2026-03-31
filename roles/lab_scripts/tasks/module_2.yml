@@ -15,12 +15,36 @@
     mode: '0755'
   delegate_to: bastion
 
+- name: Generate solve-module-2.sh script
+  ansible.builtin.template:
+    src: solve-module-2.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-2.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate reset-module-2.sh script
+  ansible.builtin.template:
+    src: reset-module-2.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-2.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate validate-module-2.sh script
+  ansible.builtin.template:
+    src: validate-module-2.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-2.sh"
+    mode: '0755'
+  delegate_to: bastion
+
 - name: Display RHTAS script locations
   ansible.builtin.debug:
     msg:
     - "RHTAS scripts generated in ~/lab-assets:"
     - "  install-rhtas.sh"
     - "  test-image-signing.sh"
+    - "  solve-module-2.sh"
+    - "  reset-module-2.sh"
+    - "  validate-module-2.sh"
     - ""
     - "Scripts reference existing YAML files in ~/lab-assets:"
     - "  tas-instance.yml"
@@ -34,3 +58,6 @@
     data:
       rhtas_install_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/install-rhtas.sh"
       rhtas_test_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/test-image-signing.sh"
+      module_2_solve_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-2.sh"
+      module_2_reset_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-2.sh"
+      module_2_validate_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-2.sh"

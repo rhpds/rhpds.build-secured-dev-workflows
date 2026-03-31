@@ -1,0 +1,173 @@
+#!/bin/bash
+#
+# Script: reset-module-2.sh
+# Purpose: Reset Module 2 to initial state
+# Undoes: RHTAS installation and image signing test
+#
+
+set -e
+
+# Initialize environment variables
+CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
+
+# Namespace variables
+KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
+TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
+PIPELINES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_pipelines_namespace }}"
+APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
+
+# TAS Configuration
+TAS_CHAINS_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_chains_realm }}"
+TAS_SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
+TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
+
+echo "========================================="
+echo "Resetting Module 2: RHTAS Installation"
+echo "========================================="
+echo ""
+
+#######################################
+# Step 1: Revert Tekton Chains Configuration
+#######################################
+echo "Step 1: Reverting Tekton Chains configuration..."
+echo "-------------------------------------------------"
+
+# Reset Tekton Chains to default configuration
+oc patch tektonconfig config -n ${PIPELINES_NAMESPACE} --type=json -p='[
+  {"op": "remove", "path": "/spec/chain/artifacts.oci.storage"},
+  {"op": "remove", "path": "/spec/chain/artifacts.taskrun.format"},
+  {"op": "remove", "path": "/spec/chain/artifacts.taskrun.storage"},
+  {"op": "remove", "path": "/spec/chain/transparency.enabled"}
+]' 2>/dev/null || echo "✓ Tekton Chains already at default configuration"
+
+echo "✓ Tekton Chains configuration reverted"
+echo ""
+
+#######################################
+# Step 2: Delete OIDC Refresher App
+#######################################
+echo "Step 2: Deleting OIDC refresher app..."
+echo "---------------------------------------"
+
+if oc get deployment oidc-token-refresher -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
+    oc delete deployment oidc-token-refresher -n ${PIPELINES_NAMESPACE}
+    echo "✓ OIDC refresher deployment deleted"
+fi
+
+if oc get service oidc-token-refresher -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
+    oc delete service oidc-token-refresher -n ${PIPELINES_NAMESPACE}
+    echo "✓ OIDC refresher service deleted"
+fi
+
+if oc get secret oidc-info -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
+    oc delete secret oidc-info -n ${PIPELINES_NAMESPACE}
+    echo "✓ OIDC info secret deleted"
+fi
+
+echo "✓ OIDC refresher app removed"
+echo ""
+
+#######################################
+# Step 3: Delete RHTAS Instance
+#######################################
+echo "Step 3: Deleting RHTAS instance..."
+echo "-----------------------------------"
+
+if oc get securesign -n ${TAS_NAMESPACE} instance 2>/dev/null; then
+    oc delete securesign instance -n ${TAS_NAMESPACE}
+    echo "✓ RHTAS instance deleted"
+
+    # Wait for resources to be cleaned up
+    echo "Waiting for RHTAS resources to be cleaned up..."
+    sleep 15
+else
+    echo "✓ RHTAS instance not found (already clean)"
+fi
+echo ""
+
+#######################################
+# Step 4: Delete Keycloak Clients and Realm
+#######################################
+echo "Step 4: Deleting Keycloak clients and realm..."
+echo "-----------------------------------------------"
+
+# Get Keycloak admin credentials
+KEYCLOAK_ADMIN_USER=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.username}' | base64 -d)
+KEYCLOAK_ADMIN_PASSWORD=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)
+
+# Get admin access token
+ADMIN_TOKEN=$(curl -s -X POST "${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "client_id=admin-cli" \
+  -d "username=${KEYCLOAK_ADMIN_USER}" \
+  -d "password=${KEYCLOAK_ADMIN_PASSWORD}" \
+  -d "grant_type=password" | jq -r '.access_token')
+
+if [ -z "$ADMIN_TOKEN" ] || [ "$ADMIN_TOKEN" == "null" ]; then
+    echo "Warning: Failed to authenticate with Keycloak, skipping client/realm deletion"
+else
+    # Delete trusted-artifact-signer client from sso realm
+    SSO_CLIENT_ID=$(curl -s -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${KEYCLOAK_URL}/admin/realms/${TAS_SSO_REALM}/clients?clientId=${TAS_CLIENT_ID}" | jq -r '.[0].id // empty')
+
+    if [ -n "$SSO_CLIENT_ID" ]; then
+        curl -s -X DELETE "${KEYCLOAK_URL}/admin/realms/${TAS_SSO_REALM}/clients/${SSO_CLIENT_ID}" \
+          -H "Authorization: Bearer ${ADMIN_TOKEN}"
+        echo "✓ Deleted ${TAS_CLIENT_ID} client from ${TAS_SSO_REALM} realm"
+    else
+        echo "✓ ${TAS_CLIENT_ID} client not found in ${TAS_SSO_REALM} realm"
+    fi
+
+    # Delete tas-chains realm
+    REALM_EXISTS=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "Authorization: Bearer ${ADMIN_TOKEN}" \
+      "${KEYCLOAK_URL}/admin/realms/${TAS_CHAINS_REALM}")
+
+    if [ "$REALM_EXISTS" == "200" ]; then
+        curl -s -X DELETE "${KEYCLOAK_URL}/admin/realms/${TAS_CHAINS_REALM}" \
+          -H "Authorization: Bearer ${ADMIN_TOKEN}"
+        echo "✓ Deleted ${TAS_CHAINS_REALM} realm"
+    else
+        echo "✓ ${TAS_CHAINS_REALM} realm not found"
+    fi
+fi
+echo ""
+
+#######################################
+# Step 5: Clean Up Test TaskRuns
+#######################################
+echo "Step 5: Cleaning up test TaskRuns..."
+echo "-------------------------------------"
+
+# Delete all TaskRuns from the image signing test
+TASKRUN_COUNT=$(oc get taskrun -n ${APP_CI_NAMESPACE} -l test.workload.security.redhat.com/test=image-signing --no-headers 2>/dev/null | wc -l || echo 0)
+
+if [ "$TASKRUN_COUNT" -gt 0 ]; then
+    oc delete taskrun -n ${APP_CI_NAMESPACE} -l test.workload.security.redhat.com/test=image-signing
+    echo "✓ Deleted ${TASKRUN_COUNT} test TaskRun(s)"
+else
+    echo "✓ No test TaskRuns found"
+fi
+
+# Also delete any orphaned TaskRuns
+ORPHANED_COUNT=$(oc get taskrun -n ${APP_CI_NAMESPACE} -l tekton.dev/task=build-and-push --no-headers 2>/dev/null | wc -l || echo 0)
+
+if [ "$ORPHANED_COUNT" -gt 0 ]; then
+    oc delete taskrun -n ${APP_CI_NAMESPACE} -l tekton.dev/task=build-and-push
+    echo "✓ Deleted ${ORPHANED_COUNT} orphaned TaskRun(s)"
+fi
+echo ""
+
+echo "========================================="
+echo "Module 2 Reset Complete!"
+echo "========================================="
+echo ""
+echo "Cleaned up:"
+echo "  ✓ Tekton Chains configuration reverted"
+echo "  ✓ OIDC refresher app removed"
+echo "  ✓ RHTAS instance removed (Fulcio, Rekor, TUF)"
+echo "  ✓ tas-chains realm deleted from Keycloak"
+echo "  ✓ trusted-artifact-signer client removed from sso realm"
+echo "  ✓ Test TaskRuns cleaned up"
+echo ""

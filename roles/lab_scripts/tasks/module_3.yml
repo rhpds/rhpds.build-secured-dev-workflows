@@ -22,6 +22,27 @@
     mode: '0755'
   delegate_to: bastion
 
+- name: Generate solve-module-3.sh script
+  ansible.builtin.template:
+    src: solve-module-3.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-3.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate reset-module-3.sh script
+  ansible.builtin.template:
+    src: reset-module-3.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-3.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate validate-module-3.sh script
+  ansible.builtin.template:
+    src: validate-module-3.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-3.sh"
+    mode: '0755'
+  delegate_to: bastion
+
 - name: Display Module 3 script locations
   ansible.builtin.debug:
     msg:
@@ -29,6 +50,9 @@
     - "  create-developer-user.sh"
     - "  create-devspaces-configmap.sh"
     - "  create-pipeline-secrets.sh"
+    - "  solve-module-3.sh"
+    - "  reset-module-3.sh"
+    - "  validate-module-3.sh"
 
 - name: Save Module 3 script information
   agnosticd.core.agnosticd_user_info:
@@ -36,3 +60,6 @@
       rhdh_create_user_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-developer-user.sh"
       rhdh_devspaces_configmap_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-devspaces-configmap.sh"
       rhdh_pipeline_secrets_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-pipeline-secrets.sh"
+      module_3_solve_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-3.sh"
+      module_3_reset_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-3.sh"
+      module_3_validate_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-3.sh"
