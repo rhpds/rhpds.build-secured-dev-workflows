@@ -34,12 +34,17 @@ echo "Step 1: Reverting Tekton Chains configuration..."
 echo "-------------------------------------------------"
 
 # Reset Tekton Chains to default configuration
-oc patch tektonconfig config -n ${PIPELINES_NAMESPACE} --type=json -p='[
-  {"op": "remove", "path": "/spec/chain/artifacts.oci.storage"},
-  {"op": "remove", "path": "/spec/chain/artifacts.taskrun.format"},
-  {"op": "remove", "path": "/spec/chain/artifacts.taskrun.storage"},
-  {"op": "remove", "path": "/spec/chain/transparency.enabled"}
-]' 2>/dev/null || echo "✓ Tekton Chains already at default configuration"
+# Remove each field individually to avoid errors if some fields don't exist
+CHAIN_FIELDS=(
+  "artifacts.oci.storage"
+  "artifacts.taskrun.format"
+  "artifacts.taskrun.storage"
+  "transparency.enabled"
+)
+
+for field in "${CHAIN_FIELDS[@]}"; do
+  oc patch tektonconfig config -n ${PIPELINES_NAMESPACE} --type=json -p="[{\"op\": \"remove\", \"path\": \"/spec/chain/$field\"}]" 2>/dev/null || true
+done
 
 echo "✓ Tekton Chains configuration reverted"
 echo ""
