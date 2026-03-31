@@ -39,3 +39,5 @@ rhpds_build_secured_dev_workflows_lab_scripts_developer_password: xtswmPuS
 
 # Module 4: ACS Configuration
 rhpds_build_secured_dev_workflows_lab_scripts_acs_namespace: stackrox
+rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_username: admin
+rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_password: ""
