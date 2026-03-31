@@ -7,7 +7,7 @@
 set -e
 
 # Initialize environment variables
-CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
 export TPA_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_keycloak_realm }}"
 export TPA_CLI_CLIENT_SECRET="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_cli_client_secret }}"

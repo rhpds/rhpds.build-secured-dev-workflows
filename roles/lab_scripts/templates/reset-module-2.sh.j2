@@ -8,25 +8,25 @@
 set -e
 
 # Initialize environment variables
-CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 # Namespace variables
-KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
-TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
-PIPELINES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_pipelines_namespace }}"
-APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
-QUAY_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace }}"
+export KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
+export TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
+export PIPELINES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_pipelines_namespace }}"
+export APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
+export QUAY_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace }}"
 
 # TAS Configuration
-TAS_CHAINS_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_chains_realm }}"
-TAS_SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
-TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
+export TAS_CHAINS_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_chains_realm }}"
+export TAS_SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
+export TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
 
 # Quay Configuration
-QUAY_TOKEN="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_token }}"
-QUAY_ORG="tssc"
-QUAY_REPO="tekton-chains-test"
+export QUAY_TOKEN="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_token }}"
+export QUAY_ORG="tssc"
+export QUAY_REPO="tekton-chains-test"
 
 echo "========================================="
 echo "Resetting Module 2: RHTAS Installation"

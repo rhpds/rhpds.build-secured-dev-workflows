@@ -8,18 +8,18 @@
 set -e
 
 # Initialize environment variables
-CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 # Namespace variables
-KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
-TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
-PIPELINES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_pipelines_namespace }}"
+export KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
+export TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
+export PIPELINES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_pipelines_namespace }}"
 
 # TAS Configuration
-TAS_CHAINS_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_chains_realm }}"
-TAS_SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
-TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
+export TAS_CHAINS_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_chains_realm }}"
+export TAS_SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
+export TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
 
 VALIDATION_FAILED=0
 

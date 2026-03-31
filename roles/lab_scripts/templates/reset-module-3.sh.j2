@@ -8,17 +8,17 @@
 set -e
 
 # Initialize environment variables
-CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 export KEYCLOAK_URL="https://sso.${CLUSTER_DOMAIN}"
 
 # Namespace variables
-KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
-DEVSPACES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_devspaces_namespace }}"
-APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
+export KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
+export DEVSPACES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_devspaces_namespace }}"
+export APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
 
 # SSO Configuration
-SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
-DEVELOPER_USERNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_developer_username }}"
+export SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
+export DEVELOPER_USERNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_developer_username }}"
 
 echo "========================================="
 echo "Resetting Module 3: Developer Setup"

@@ -9,15 +9,15 @@
 set -e
 
 # Initialize environment variables
-CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
 # Namespace variables
-DEVSPACES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_devspaces_namespace }}"
-TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
+export DEVSPACES_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_devspaces_namespace }}"
+export TAS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_namespace }}"
 
 # TAS Configuration
-TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
-SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
+export TAS_CLIENT_ID="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_client_id }}"
+export SSO_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tas_sso_realm }}"
 
 echo "========================================="
 echo "Creating Dev Spaces ConfigMap"
@@ -26,9 +26,9 @@ echo ""
 
 # Get TAS service URLs
 echo "Retrieving TAS service URLs..."
-FULCIO_URL="https://fulcio-server-${TAS_NAMESPACE}.${CLUSTER_DOMAIN}"
-REKOR_URL="https://rekor-server-${TAS_NAMESPACE}.${CLUSTER_DOMAIN}"
-ISSUER_URL="https://sso.${CLUSTER_DOMAIN}/realms/${SSO_REALM}"
+export FULCIO_URL="https://fulcio-server-${TAS_NAMESPACE}.${CLUSTER_DOMAIN}"
+export REKOR_URL="https://rekor-server-${TAS_NAMESPACE}.${CLUSTER_DOMAIN}"
+export ISSUER_URL="https://sso.${CLUSTER_DOMAIN}/realms/${SSO_REALM}"
 
 echo "  Fulcio URL: ${FULCIO_URL}"
 echo "  Rekor URL: ${REKOR_URL}"

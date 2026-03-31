@@ -8,14 +8,14 @@
 set -e
 
 # Initialize environment variables
-CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
 # Namespace variables
-KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
-TPA_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_namespace }}"
+export KEYCLOAK_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_keycloak_namespace }}"
+export TPA_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_namespace }}"
 
 # TPA Configuration
-TPA_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_keycloak_realm }}"
+export TPA_REALM="{{ rhpds_build_secured_dev_workflows_lab_scripts_tpa_keycloak_realm }}"
 
 echo "========================================="
 echo "Resetting Module 1: RHTPA Installation"
