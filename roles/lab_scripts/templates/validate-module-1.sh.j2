@@ -69,7 +69,7 @@ echo ""
 echo "Check 3: RHTPA Instance Deployment"
 echo "-----------------------------------"
 
-if oc get tpa -n ${TPA_NAMESPACE} instance &>/dev/null; then
+if oc get trustedprofileanalyzer trustedprofileanalyzer -n ${TPA_NAMESPACE} &>/dev/null; then
     echo "✓ PASS: RHTPA instance exists"
 
     # Check if TUF pod is running
