@@ -244,6 +244,26 @@ if [ $ELAPSED -ge $TIMEOUT ]; then
     echo "Error: OIDC refresher pod not ready after ${TIMEOUT} seconds"
     exit 1
 fi
+
+# Step 4.5: Wait for oidc-token secret to have valid id-token
+echo "Step 4.5: Waiting for oidc-token secret to have valid id-token..."
+TIMEOUT=120
+ELAPSED=0
+while [ $ELAPSED -lt $TIMEOUT ]; do
+    ID_TOKEN=$(oc get secret oidc-token -n ${PIPELINES_NAMESPACE} -o jsonpath='{.data.id-token}' 2>/dev/null | base64 -d 2>/dev/null || true)
+    if [ -n "$ID_TOKEN" ] && [[ "$ID_TOKEN" == eyJ* ]]; then
+        echo "✓ oidc-token secret has valid id-token"
+        break
+    fi
+    echo "Waiting for oidc-token secret to be populated..."
+    sleep 5
+    ELAPSED=$((ELAPSED + 5))
+done
+
+if [ -z "$ID_TOKEN" ] || [[ "$ID_TOKEN" != eyJ* ]]; then
+    echo "Error: oidc-token secret does not have a valid id-token after ${TIMEOUT} seconds"
+    exit 1
+fi
 echo ""
 
 #######################################
