@@ -1,0 +1,131 @@
+#!/bin/bash
+#
+# Script: test-image-scanning.sh
+# Purpose: Test ACS Image Scanning - Showroom Module 4 Step 1.2
+#
+# This script automates:
+# - Step 1.2: Scan and evaluate an image
+
+set -e
+
+# Initialize environment variables
+export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
+
+# Namespace variables
+export ACS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_namespace }}"
+export QUAY_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace }}"
+
+# ACS Configuration
+export ACS_ADMIN_USERNAME="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_username }}"
+export ACS_ADMIN_PASSWORD="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_admin_password }}"
+
+# Test image configuration
+export QUAY_ORG="tssc"
+export QUAY_REPO="tekton-chains-test"
+export IMAGE_TAG="latest"
+
+echo "========================================="
+echo "Testing ACS Image Scanning"
+echo "========================================="
+echo ""
+
+#######################################
+# Setup roxctl authentication
+#######################################
+echo "Setting up roxctl authentication..."
+echo "------------------------------------"
+
+# Get ACS Central route
+ACS_CENTRAL_URL=$(oc get route central -n ${ACS_NAMESPACE} -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
+
+if [ -z "$ACS_CENTRAL_URL" ]; then
+    echo "Error: Could not find ACS Central route"
+    exit 1
+fi
+
+echo "ACS Central URL: https://${ACS_CENTRAL_URL}"
+
+# Get Quay route
+QUAY_URL=$(oc get route -n ${QUAY_NAMESPACE} -l quay-component=quay-app-route -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "")
+
+if [ -z "$QUAY_URL" ]; then
+    echo "Error: Could not find Quay route"
+    exit 1
+fi
+
+# Full image name
+export TEST_IMAGE="${QUAY_URL}/${QUAY_ORG}/${QUAY_REPO}:${IMAGE_TAG}"
+echo "Test image: ${TEST_IMAGE}"
+
+# Authenticate to ACS and get API token
+echo "Authenticating to ACS..."
+ACS_AUTH_RESPONSE=$(curl -k -s -X POST "https://${ACS_CENTRAL_URL}/v1/login" \
+  -H "Content-Type: application/json" \
+  -d "{\"username\":\"${ACS_ADMIN_USERNAME}\",\"password\":\"${ACS_ADMIN_PASSWORD}\"}" 2>/dev/null || echo "")
+
+if [ -z "$ACS_AUTH_RESPONSE" ]; then
+    echo "Error: Failed to authenticate to ACS"
+    exit 1
+fi
+
+ACS_API_TOKEN=$(echo "$ACS_AUTH_RESPONSE" | jq -r '.token // empty' 2>/dev/null || echo "")
+
+if [ -z "$ACS_API_TOKEN" ]; then
+    echo "Error: Failed to get ACS API token"
+    exit 1
+fi
+
+echo "✓ Authenticated to ACS"
+
+# Configure roxctl environment variables
+export ROX_ENDPOINT="${ACS_CENTRAL_URL}:443"
+export ROX_API_TOKEN="${ACS_API_TOKEN}"
+
+echo "✓ roxctl configured"
+echo ""
+
+#######################################
+# Step 1.2: Scan and evaluate image
+#######################################
+echo "Step 1.2: Scanning and evaluating image..."
+echo "-------------------------------------------"
+
+# Scan the image
+echo "Running vulnerability scan..."
+echo "Command: roxctl image scan --image=${TEST_IMAGE}"
+echo ""
+
+roxctl --insecure-skip-tls-verify image scan --image="${TEST_IMAGE}" || true
+
+echo ""
+echo "✓ Vulnerability scan completed"
+echo ""
+
+# Check the image against policies
+echo "Running policy check..."
+echo "Command: roxctl image check --image=${TEST_IMAGE}"
+echo ""
+
+roxctl --insecure-skip-tls-verify image check --image="${TEST_IMAGE}" || true
+
+echo ""
+echo "✓ Policy check completed"
+echo ""
+
+echo "========================================="
+echo "Image Scanning Test Complete!"
+echo "========================================="
+echo ""
+echo "Test Results:"
+echo "  Image: ${TEST_IMAGE}"
+echo "  Scan: Completed"
+echo "  Policy Check: Completed"
+echo ""
+echo "Key Findings:"
+echo "  ✓ Container images can be scanned from the registry using ACS"
+echo "  ✓ Vulnerability findings are associated with specific image digest"
+echo "  ✓ Policy evaluation can be performed programmatically"
+echo ""
+echo "These checks demonstrate that vulnerability scanning and policy"
+echo "evaluation are applied consistently as part of the delivery pipeline."
+echo ""

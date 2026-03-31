@@ -1,0 +1,56 @@
+---
+# Module 4: ACS Policy Enforcement Tasks
+
+- name: Generate configure-acs.sh script
+  ansible.builtin.template:
+    src: configure-acs.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/configure-acs.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate test-image-scanning.sh script
+  ansible.builtin.template:
+    src: test-image-scanning.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/test-image-scanning.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Copy solve-module-4.sh script
+  ansible.builtin.copy:
+    src: solve-module-4.sh
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-4.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate reset-module-4.sh script
+  ansible.builtin.template:
+    src: reset-module-4.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-4.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Generate validate-module-4.sh script
+  ansible.builtin.template:
+    src: validate-module-4.sh.j2
+    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-4.sh"
+    mode: '0755'
+  delegate_to: bastion
+
+- name: Display Module 4 script locations
+  ansible.builtin.debug:
+    msg:
+    - "ACS Policy Enforcement scripts generated in ~/lab-assets:"
+    - "  configure-acs.sh"
+    - "  test-image-scanning.sh"
+    - "  solve-module-4.sh"
+    - "  reset-module-4.sh"
+    - "  validate-module-4.sh"
+
+- name: Save Module 4 script information
+  agnosticd.core.agnosticd_user_info:
+    data:
+      acs_configure_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/configure-acs.sh"
+      acs_test_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/test-image-scanning.sh"
+      module_4_solve_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-4.sh"
+      module_4_reset_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-4.sh"
+      module_4_validate_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-4.sh"

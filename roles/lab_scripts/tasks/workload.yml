@@ -9,3 +9,6 @@
 
 - name: Execute Module 3 tasks
   ansible.builtin.include_tasks: module_3.yml
+
+- name: Execute Module 4 tasks
+  ansible.builtin.include_tasks: module_4.yml
