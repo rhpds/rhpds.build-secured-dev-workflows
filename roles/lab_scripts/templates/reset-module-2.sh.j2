@@ -86,6 +86,18 @@ else
     echo "✓ OIDC info secret not found (already clean)"
 fi
 
+if oc get secret oidc-token -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
+    oc delete secret oidc-token -n ${PIPELINES_NAMESPACE}
+    # Verify deletion
+    if ! oc get secret oidc-token -n ${PIPELINES_NAMESPACE} 2>/dev/null; then
+        echo "✓ OIDC token secret deleted"
+    else
+        echo "Warning: OIDC token secret still exists"
+    fi
+else
+    echo "✓ OIDC token secret not found (already clean)"
+fi
+
 echo "✓ OIDC refresher app removed"
 echo ""
 
@@ -240,6 +252,7 @@ echo ""
 echo "Cleaned up:"
 echo "  ✓ Tekton Chains configuration reverted"
 echo "  ✓ OIDC refresher app removed"
+echo "  ✓ OIDC info and token secrets removed"
 echo "  ✓ RHTAS instance removed (Fulcio, Rekor, TUF)"
 echo "  ✓ tas-chains realm deleted from Keycloak"
 echo "  ✓ trusted-artifact-signer client removed from sso realm"
