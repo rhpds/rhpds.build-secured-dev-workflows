@@ -12,6 +12,7 @@ set -e
 export CLUSTER_DOMAIN={{ openshift_cluster_ingress_domain }}
 
 # Namespace variables
+export ACS_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_acs_namespace }}"
 export QUAY_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace }}"
 export APP_CI_NAMESPACE="{{ rhpds_build_secured_dev_workflows_lab_scripts_app_ci_namespace }}"
 
@@ -31,24 +32,33 @@ echo ""
 echo "Setting up roxctl authentication..."
 echo "------------------------------------"
 
-# Get ACS credentials from existing secret
-echo "Retrieving ACS credentials from rox-api-token secret..."
+# Get ACS API token from rox-api-token secret
+echo "Retrieving ACS API token from rox-api-token secret..."
 
 if ! oc get secret rox-api-token -n ${APP_CI_NAMESPACE} &>/dev/null; then
     echo "Error: rox-api-token secret not found in ${APP_CI_NAMESPACE}"
     exit 1
 fi
 
-export ROX_ENDPOINT=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-endpoint}' | base64 -d)
 export ROX_API_TOKEN=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-token}' | base64 -d)
 
-if [ -z "$ROX_ENDPOINT" ] || [ -z "$ROX_API_TOKEN" ]; then
-    echo "Error: Failed to retrieve ACS credentials from secret"
+if [ -z "$ROX_API_TOKEN" ]; then
+    echo "Error: Failed to retrieve ACS API token from secret"
     exit 1
 fi
 
-echo "✓ ACS endpoint: ${ROX_ENDPOINT}"
 echo "✓ ACS API token retrieved"
+
+# Get ACS Central external route
+ACS_CENTRAL_URL=$(oc get route central -n ${ACS_NAMESPACE} -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
+
+if [ -z "$ACS_CENTRAL_URL" ]; then
+    echo "Error: Could not find ACS Central route"
+    exit 1
+fi
+
+export ROX_ENDPOINT="https://${ACS_CENTRAL_URL}:443"
+echo "✓ ACS endpoint: ${ROX_ENDPOINT}"
 
 # Get Quay route
 QUAY_URL=$(oc get route -n ${QUAY_NAMESPACE} -l quay-component=quay-app-route -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "")
