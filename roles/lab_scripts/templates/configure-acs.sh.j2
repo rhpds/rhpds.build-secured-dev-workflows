@@ -33,27 +33,32 @@ echo ""
 echo "Step 1.1: Configuring ACS-Quay Integration..."
 echo "----------------------------------------------"
 
-# Get ACS credentials from rox-api-token secret
-echo "Retrieving ACS credentials from rox-api-token secret..."
+# Get ACS API token from rox-api-token secret
+echo "Retrieving ACS API token from rox-api-token secret..."
 
 if ! oc get secret rox-api-token -n ${APP_CI_NAMESPACE} &>/dev/null; then
     echo "Error: rox-api-token secret not found in ${APP_CI_NAMESPACE}"
     exit 1
 fi
 
-export ROX_ENDPOINT=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-endpoint}' | base64 -d)
 export ACS_API_TOKEN=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-token}' | base64 -d)
 
-if [ -z "$ROX_ENDPOINT" ] || [ -z "$ACS_API_TOKEN" ]; then
-    echo "Error: Failed to retrieve ACS credentials from secret"
+if [ -z "$ACS_API_TOKEN" ]; then
+    echo "Error: Failed to retrieve ACS API token from secret"
     exit 1
 fi
 
-# Extract hostname from ROX_ENDPOINT
-ACS_CENTRAL_URL=$(echo "$ROX_ENDPOINT" | sed 's|https://||' | sed 's|:443||')
+echo "✓ ACS API token retrieved"
+
+# Get ACS Central external route
+ACS_CENTRAL_URL=$(oc get route central -n ${ACS_NAMESPACE} -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
+
+if [ -z "$ACS_CENTRAL_URL" ]; then
+    echo "Error: Could not find ACS Central route"
+    exit 1
+fi
 
 echo "ACS Central URL: https://${ACS_CENTRAL_URL}"
-echo "✓ ACS API token retrieved"
 
 # Get Quay route
 QUAY_URL=$(oc get route -n ${QUAY_NAMESPACE} -l quay-component=quay-app-route -o jsonpath='{.items[0].spec.host}' 2>/dev/null || echo "")

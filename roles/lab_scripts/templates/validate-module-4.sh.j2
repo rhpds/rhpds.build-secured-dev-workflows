@@ -31,39 +31,48 @@ echo "Check 1: ACS API Token Secret"
 echo "------------------------------"
 
 if oc get secret rox-api-token -n ${APP_CI_NAMESPACE} &>/dev/null; then
-    export ROX_ENDPOINT=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-endpoint}' | base64 -d)
     export ACS_API_TOKEN=$(oc get secret rox-api-token -n ${APP_CI_NAMESPACE} -o jsonpath='{.data.rox-api-token}' | base64 -d)
 
-    if [ -n "$ROX_ENDPOINT" ] && [ -n "$ACS_API_TOKEN" ]; then
-        echo "✓ PASS: ACS API token secret exists and contains credentials"
-
-        # Extract hostname from ROX_ENDPOINT
-        ACS_CENTRAL_URL=$(echo "$ROX_ENDPOINT" | sed 's|https://||' | sed 's|:443||')
-
-        HTTP_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" "https://${ACS_CENTRAL_URL}" 2>/dev/null || echo "000")
-
-        if echo "$HTTP_CODE" | grep -qE "200|302|401"; then
-            echo "✓ PASS: ACS Central is accessible (HTTP ${HTTP_CODE})"
-        else
-            echo "✗ FAIL: ACS Central is not accessible (HTTP ${HTTP_CODE})"
-            VALIDATION_FAILED=1
-        fi
+    if [ -n "$ACS_API_TOKEN" ]; then
+        echo "✓ PASS: ACS API token secret exists and contains token"
     else
-        echo "✗ FAIL: ACS credentials are empty in secret"
+        echo "✗ FAIL: ACS API token is empty in secret"
         VALIDATION_FAILED=1
     fi
 else
     echo "✗ FAIL: rox-api-token secret not found in ${APP_CI_NAMESPACE}"
     VALIDATION_FAILED=1
-    ACS_CENTRAL_URL=""
     ACS_API_TOKEN=""
 fi
 echo ""
 
 #######################################
-# Check 2: ACS-Quay Integration
+# Check 2: ACS Central Availability
 #######################################
-echo "Check 2: ACS-Quay Integration"
+echo "Check 2: ACS Central Availability"
+echo "----------------------------------"
+
+ACS_CENTRAL_URL=$(oc get route central -n ${ACS_NAMESPACE} -o jsonpath='{.spec.host}' 2>/dev/null || echo "")
+
+if [ -n "$ACS_CENTRAL_URL" ]; then
+    HTTP_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" "https://${ACS_CENTRAL_URL}" 2>/dev/null || echo "000")
+
+    if echo "$HTTP_CODE" | grep -qE "200|302|401"; then
+        echo "✓ PASS: ACS Central is accessible (HTTP ${HTTP_CODE})"
+    else
+        echo "✗ FAIL: ACS Central is not accessible (HTTP ${HTTP_CODE})"
+        VALIDATION_FAILED=1
+    fi
+else
+    echo "✗ FAIL: ACS Central route not found"
+    VALIDATION_FAILED=1
+fi
+echo ""
+
+#######################################
+# Check 3: ACS-Quay Integration
+#######################################
+echo "Check 3: ACS-Quay Integration"
 echo "------------------------------"
 
     # Check if integration exists
@@ -96,9 +105,9 @@ fi
 echo ""
 
 #######################################
-# Check 3: roxctl availability
+# Check 4: roxctl availability
 #######################################
-echo "Check 3: roxctl CLI availability"
+echo "Check 4: roxctl CLI availability"
 echo "---------------------------------"
 
 if command -v roxctl &> /dev/null; then
