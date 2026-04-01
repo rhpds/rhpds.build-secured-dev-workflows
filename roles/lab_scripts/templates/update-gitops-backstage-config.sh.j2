@@ -111,12 +111,12 @@ if [ "$MODE" == "update" ]; then
     # Uncomment all lines (replace '# ' after any leading spaces with just the spaces)
     sed -i 's/^\([ ]*\)# /\1/' "$TARGET_FILE"
 
-    # Comment lines 173-175 (add # at the very start of the line)
-    sed -i '173,175s/^/#/' "$TARGET_FILE"
+    # Comment lines 172-175 (add # at the very start of the line)
+    sed -i '172,175s/^/#/' "$TARGET_FILE"
 
     echo "✓ Configuration file processed"
     echo "  - All commented lines uncommented"
-    echo "  - Lines 173-175 commented out"
+    echo "  - Lines 172-175 commented out"
     echo ""
 
     #######################################
