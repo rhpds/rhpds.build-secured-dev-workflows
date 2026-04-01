@@ -10,7 +10,7 @@ rhpds_build_secured_dev_workflows_lab_scripts_gitlab_namespace: gitlab
 rhpds_build_secured_dev_workflows_lab_scripts_quay_namespace: quay-enterprise
 
 # Script output directory
-rhpds_build_secured_dev_workflows_lab_scripts_output_dir: ~/lab-assets
+rhpds_build_secured_dev_workflows_lab_scripts_output_dir: $HOME/lab-assets
 
 # Module 1: TPA Configuration
 rhpds_build_secured_dev_workflows_lab_scripts_tpa_keycloak_realm: tpa
