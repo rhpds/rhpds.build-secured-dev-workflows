@@ -32,16 +32,8 @@ echo ""
 
 # Get Keycloak admin credentials
 echo "Retrieving Keycloak admin credentials..."
-KEYCLOAK_ADMIN_USER=""
-KEYCLOAK_ADMIN_PASSWORD=""
-while [ -z "$KEYCLOAK_ADMIN_USER" ] || [ -z "$KEYCLOAK_ADMIN_PASSWORD" ]; do
-  KEYCLOAK_ADMIN_USER=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.username}' 2>/dev/null | base64 -d 2>/dev/null || true)
-  KEYCLOAK_ADMIN_PASSWORD=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.password}' 2>/dev/null | base64 -d 2>/dev/null || true)
-  if [ -z "$KEYCLOAK_ADMIN_USER" ] || [ -z "$KEYCLOAK_ADMIN_PASSWORD" ]; then
-    echo "Waiting for Keycloak credentials to be available..."
-    sleep 2
-  fi
-done
+KEYCLOAK_ADMIN_USER=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.username}' | base64 -d)
+KEYCLOAK_ADMIN_PASSWORD=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)
 
 # Get admin access token
 echo "Authenticating with Keycloak..."
