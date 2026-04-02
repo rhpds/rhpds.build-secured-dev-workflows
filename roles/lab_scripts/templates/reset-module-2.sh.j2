@@ -131,6 +131,7 @@ echo ""
 echo "Step 3: Deleting RHTAS instance..."
 echo "-----------------------------------"
 
+# Part 1: Delete SecureSign instance
 if oc get securesign -n ${TAS_NAMESPACE} trusted-artifact-signer 2>/dev/null; then
     oc delete securesign trusted-artifact-signer -n ${TAS_NAMESPACE}
 
@@ -153,27 +154,37 @@ if oc get securesign -n ${TAS_NAMESPACE} trusted-artifact-signer 2>/dev/null; th
     if oc get securesign trusted-artifact-signer -n ${TAS_NAMESPACE} 2>/dev/null; then
         echo "Warning: RHTAS instance still exists after timeout"
     fi
-
-    # Wait for TUF pod to be deleted
-    echo "Waiting for TUF pod to be deleted..."
-    TIMEOUT=120
-    ELAPSED=0
-    while [ $ELAPSED -lt $TIMEOUT ]; do
-        TUF_POD_COUNT=$(oc get pods -n ${TAS_NAMESPACE} -l app.kubernetes.io/component=tuf -o name 2>/dev/null | wc -l)
-        if [ "$TUF_POD_COUNT" -eq 0 ]; then
-            echo "✓ TUF pod deleted"
-            break
-        fi
-        echo "TUF pod still present, waiting..."
-        sleep 5
-        ELAPSED=$((ELAPSED + 5))
-    done
-
-    if [ "$TUF_POD_COUNT" -gt 0 ]; then
-        echo "Warning: TUF pod still exists after timeout"
-    fi
 else
     echo "✓ RHTAS instance not found (already clean)"
+fi
+
+# Part 2: Wait for all pods to terminate and delete PVCs
+echo "Checking for remaining pods in ${TAS_NAMESPACE}..."
+TIMEOUT=120
+ELAPSED=0
+while [ $ELAPSED -lt $TIMEOUT ]; do
+    POD_COUNT=$(oc get pods -n ${TAS_NAMESPACE} --no-headers 2>/dev/null | wc -l)
+    if [ "$POD_COUNT" -eq 0 ]; then
+        echo "✓ All pods deleted"
+        break
+    fi
+    echo "Pods still present ($POD_COUNT), waiting..."
+    sleep 5
+    ELAPSED=$((ELAPSED + 5))
+done
+
+if [ "$POD_COUNT" -gt 0 ]; then
+    echo "Warning: $POD_COUNT pod(s) still exist after timeout"
+fi
+
+# Delete all PVCs in TAS namespace
+echo "Deleting PVCs in ${TAS_NAMESPACE}..."
+PVC_COUNT=$(oc get pvc -n ${TAS_NAMESPACE} --no-headers 2>/dev/null | wc -l || echo 0)
+if [ "$PVC_COUNT" -gt 0 ]; then
+    oc delete pvc --all -n ${TAS_NAMESPACE}
+    echo "✓ Deleted ${PVC_COUNT} PVC(s)"
+else
+    echo "✓ No PVCs found"
 fi
 echo ""
 
@@ -184,8 +195,16 @@ echo "Step 4: Deleting Keycloak clients and realm..."
 echo "-----------------------------------------------"
 
 # Get Keycloak admin credentials
-KEYCLOAK_ADMIN_USER=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.username}' | base64 -d)
-KEYCLOAK_ADMIN_PASSWORD=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.password}' | base64 -d)
+KEYCLOAK_ADMIN_USER=""
+KEYCLOAK_ADMIN_PASSWORD=""
+while [ -z "$KEYCLOAK_ADMIN_USER" ] || [ -z "$KEYCLOAK_ADMIN_PASSWORD" ]; do
+  KEYCLOAK_ADMIN_USER=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.username}' 2>/dev/null | base64 -d 2>/dev/null || true)
+  KEYCLOAK_ADMIN_PASSWORD=$(oc get secret keycloak-initial-admin -n ${KEYCLOAK_NAMESPACE} -o jsonpath='{.data.password}' 2>/dev/null | base64 -d 2>/dev/null || true)
+  if [ -z "$KEYCLOAK_ADMIN_USER" ] || [ -z "$KEYCLOAK_ADMIN_PASSWORD" ]; then
+    echo "Waiting for Keycloak credentials to be available..."
+    sleep 2
+  fi
+done
 
 # Get admin access token
 ADMIN_TOKEN=$(curl -s -X POST "${KEYCLOAK_URL}/realms/master/protocol/openid-connect/token" \
@@ -291,7 +310,7 @@ else
         # Check if repository exists first
         CHECK_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" \
           -H "Authorization: Bearer ${QUAY_TOKEN}" \
-          "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
+          "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}" || true)
 
         if [ "$CHECK_CODE" == "404" ]; then
             echo "✓ Quay repository not found (already clean): ${QUAY_ORG}/${QUAY_REPO}"
@@ -300,7 +319,7 @@ else
             # Delete repository using Quay API
             HTTP_CODE=$(curl -k -s -o /dev/null -w "%{http_code}" -X DELETE \
               -H "Authorization: Bearer ${QUAY_TOKEN}" \
-              "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}")
+              "https://${QUAY_URL}/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}" || true)
 
             if [ "$HTTP_CODE" == "204" ] || [ "$HTTP_CODE" == "200" ]; then
                 echo "✓ Quay repository deleted: ${QUAY_ORG}/${QUAY_REPO}"
