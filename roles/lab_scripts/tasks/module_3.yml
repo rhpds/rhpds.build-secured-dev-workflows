@@ -91,27 +91,6 @@
     mode: '0755'
   delegate_to: bastion
 
-- name: Generate solve-module-3.sh script
-  ansible.builtin.template:
-    src: solve-module-3.sh.j2
-    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-3.sh"
-    mode: '0755'
-  delegate_to: bastion
-
-- name: Generate reset-module-3.sh script
-  ansible.builtin.template:
-    src: reset-module-3.sh.j2
-    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-3.sh"
-    mode: '0755'
-  delegate_to: bastion
-
-- name: Generate validate-module-3.sh script
-  ansible.builtin.template:
-    src: validate-module-3.sh.j2
-    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-3.sh"
-    mode: '0755'
-  delegate_to: bastion
-
 - name: Generate update-gitops-backstage-config.sh script
   ansible.builtin.template:
     src: update-gitops-backstage-config.sh.j2
@@ -135,9 +114,6 @@
     - "  create-pipeline-secrets.sh"
     - "  update-gitops-backstage-config.sh"
     - "  update-rhdh-devfile-config.sh"
-    - "  solve-module-3.sh"
-    - "  reset-module-3.sh"
-    - "  validate-module-3.sh"
     - ""
     - "Commit ID files (used by update scripts):"
     - "  gitops-backstage-commit-id ({{ gitops_commit_result.stdout[:7] }})"
@@ -151,8 +127,5 @@
       rhdh_pipeline_secrets_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/create-pipeline-secrets.sh"
       rhdh_update_gitops_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/update-gitops-backstage-config.sh"
       rhdh_update_devfile_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/update-rhdh-devfile-config.sh"
-      module_3_solve_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-3.sh"
-      module_3_reset_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-3.sh"
-      module_3_validate_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-3.sh"
       gitops_backstage_commit_id: "{{ gitops_commit_result.stdout }}"
       rhdh_devfile_commit_id: "{{ rhdh_commit_result.stdout }}"

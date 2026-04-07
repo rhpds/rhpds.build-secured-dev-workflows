@@ -15,36 +15,12 @@
     mode: '0755'
   delegate_to: bastion
 
-- name: Generate solve-module-1.sh script
-  ansible.builtin.template:
-    src: solve-module-1.sh.j2
-    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-1.sh"
-    mode: '0755'
-  delegate_to: bastion
-
-- name: Generate reset-module-1.sh script
-  ansible.builtin.template:
-    src: reset-module-1.sh.j2
-    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-1.sh"
-    mode: '0755'
-  delegate_to: bastion
-
-- name: Generate validate-module-1.sh script
-  ansible.builtin.template:
-    src: validate-module-1.sh.j2
-    dest: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-1.sh"
-    mode: '0755'
-  delegate_to: bastion
-
 - name: Display script locations
   ansible.builtin.debug:
     msg:
     - "ADS RHTPA scripts generated in ~/lab-assets:"
     - "  install-rhtpa.sh"
     - "  upload-sbom.sh"
-    - "  solve-module-1.sh"
-    - "  reset-module-1.sh"
-    - "  validate-module-1.sh"
     - ""
     - "Scripts reference existing YAML files in ~/lab-assets:"
     - "  keycloak-tpa-realm.yml"
@@ -56,6 +32,3 @@
     data:
       rhtpa_install_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/install-rhtpa.sh"
       rhtpa_upload_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/upload-sbom.sh"
-      module_1_solve_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/solve-module-1.sh"
-      module_1_reset_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/reset-module-1.sh"
-      module_1_validate_script: "{{ rhpds_build_secured_dev_workflows_lab_scripts_output_dir }}/validate-module-1.sh"
