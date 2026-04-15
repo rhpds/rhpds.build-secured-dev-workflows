@@ -89,9 +89,10 @@
     rhads_dh_quay_api_token: "{{ _rhpds_build_secured_dev_workflows_developer_hub_quay_token }}"
     rhads_dh_k8s_serviceaccount_token: "{{ r_k8s_plugin_sa_secret.resources[0].data.token | b64decode }}"
 
-- name: Generate backend secret
+- name: Generate developer hub secrets
   ansible.builtin.set_fact:
     _rhpds_build_secured_dev_workflows_developer_hub_backend_secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=24') | b64encode }}"
+    _rhpds_build_secured_dev_workflows_developer_hub_automation_secret: "{{ lookup('password', '/dev/null chars=ascii_letters,digits length=24') }}"
 
 - name: Get Vault token from secret
   kubernetes.core.k8s_info:
@@ -108,6 +109,7 @@
     command: >-
       vault kv put kv/rhads-dh
       backend_secret="{{ _rhpds_build_secured_dev_workflows_developer_hub_backend_secret }}"
+      automation_secret="{{ _rhpds_build_secured_dev_workflows_developer_hub_automation_secret }}"
       postgresql_password="{{ _rhpds_build_secured_dev_workflows_developer_hub_postgresql_password }}"
       argocd_user="{{ rhpds_build_secured_dev_workflows_developer_hub_argocd_user | default('admin') }}"
       argocd_password="{{ rhpds_build_secured_dev_workflows_developer_hub_argocd_password | default('') }}"
