@@ -176,8 +176,8 @@ echo "--------------------------"
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 echo "Current branch: $BRANCH_NAME"
 
-# Push changes (force push to ensure reset takes effect, ignore if nothing to push)
-git push origin "$BRANCH_NAME" --force 2>&1 | grep -v "Everything up-to-date" || true
+# Push changes (force push to ensure reset takes effect)
+git push origin "$BRANCH_NAME" --force
 
 echo "✓ Changes pushed to origin/$BRANCH_NAME"
 echo ""
