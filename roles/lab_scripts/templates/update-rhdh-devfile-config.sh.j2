@@ -43,9 +43,33 @@ echo "Target file: ${TARGET_FILE}"
 echo ""
 
 #######################################
-# Step 1: Clone Repository
+# Step 1: Enable Force Push on Repository
 #######################################
-echo "Step 1: Cloning repository..."
+echo "Step 1: Enabling force push on repository..."
+echo "---------------------------------------------"
+
+# Get GitLab root token from secret
+GITLAB_TOKEN=$(oc get secret root-user-personal-token -n ${GITLAB_NAMESPACE} -o jsonpath='{.data.token}' | base64 -d)
+
+if [ -z "$GITLAB_TOKEN" ]; then
+    echo "✗ Error: Could not retrieve GitLab token from secret"
+    exit 1
+fi
+
+# Enable force push on protected branch using GitLab API
+curl -s --request PATCH \
+  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+  --data "allow_force_push=true" \
+  "https://gitlab-${GITLAB_NAMESPACE}.${CLUSTER_DOMAIN}/api/v4/projects/$(echo ${REPO_URL#https://*/} | sed 's|/|%2F|g')/protected_branches/main" \
+  > /dev/null 2>&1 || echo "⚠ Warning: Could not enable force push (branch may not be protected yet)"
+
+echo "✓ Force push configuration attempted"
+echo ""
+
+#######################################
+# Step 2: Clone Repository
+#######################################
+echo "Step 2: Cloning repository..."
 echo "-----------------------------"
 
 # Clean up any existing clone
@@ -62,9 +86,9 @@ echo "✓ Repository cloned"
 echo ""
 
 #######################################
-# Step 2: Read and Reset to Target Commit
+# Step 3: Read and Reset to Target Commit
 #######################################
-echo "Step 2: Reading target commit ID and resetting..."
+echo "Step 3: Reading target commit ID and resetting..."
 echo "--------------------------------------------------"
 
 # Read the commit ID from file
@@ -90,9 +114,9 @@ echo ""
 
 if [ "$MODE" == "update" ]; then
     #######################################
-    # Step 3: Process Configuration File (UPDATE MODE ONLY)
+    # Step 4: Process Configuration File (UPDATE MODE ONLY)
     #######################################
-    echo "Step 3: Processing configuration file..."
+    echo "Step 4: Processing configuration file..."
     echo "-----------------------------------------"
 
     # Check if target file exists
@@ -109,9 +133,9 @@ if [ "$MODE" == "update" ]; then
     echo ""
 
     #######################################
-    # Step 4: Commit Changes
+    # Step 5: Commit Changes
     #######################################
-    echo "Step 4: Committing changes..."
+    echo "Step 5: Committing changes..."
     echo "------------------------------"
 
     # Stage changes
@@ -133,18 +157,18 @@ if [ "$MODE" == "update" ]; then
     fi
 else
     #######################################
-    # Step 3: Commit Reset (RESET MODE)
+    # Step 4: Commit Reset (RESET MODE)
     #######################################
-    echo "Step 3: No changes needed - already at target commit"
+    echo "Step 4: No changes needed - already at target commit"
     echo "-----------------------------------------------------"
     echo "✓ Repository is at initial state"
     echo ""
 fi
 
 #######################################
-# Step 4/5: Push Changes
+# Step 5/6: Push Changes
 #######################################
-STEP_NUM=$( [ "$MODE" == "update" ] && echo "5" || echo "4" )
+STEP_NUM=$( [ "$MODE" == "update" ] && echo "6" || echo "5" )
 echo "Step ${STEP_NUM}: Pushing changes..."
 echo "--------------------------"
 

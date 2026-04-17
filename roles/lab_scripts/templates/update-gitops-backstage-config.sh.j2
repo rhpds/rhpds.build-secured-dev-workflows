@@ -43,9 +43,33 @@ echo "Target file: ${TARGET_FILE}"
 echo ""
 
 #######################################
-# Step 1: Clone Repository
+# Step 1: Enable Force Push on Repository
 #######################################
-echo "Step 1: Cloning repository..."
+echo "Step 1: Enabling force push on repository..."
+echo "---------------------------------------------"
+
+# Get GitLab root token from secret
+GITLAB_TOKEN=$(oc get secret root-user-personal-token -n ${GITLAB_NAMESPACE} -o jsonpath='{.data.token}' | base64 -d)
+
+if [ -z "$GITLAB_TOKEN" ]; then
+    echo "✗ Error: Could not retrieve GitLab token from secret"
+    exit 1
+fi
+
+# Enable force push on protected branch using GitLab API
+curl -s --request PATCH \
+  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+  --data "allow_force_push=true" \
+  "https://gitlab-${GITLAB_NAMESPACE}.${CLUSTER_DOMAIN}/api/v4/projects/$(echo ${REPO_URL#https://*/} | sed 's|/|%2F|g')/protected_branches/main" \
+  > /dev/null 2>&1 || echo "⚠ Warning: Could not enable force push (branch may not be protected yet)"
+
+echo "✓ Force push configuration attempted"
+echo ""
+
+#######################################
+# Step 2: Clone Repository
+#######################################
+echo "Step 2: Cloning repository..."
 echo "-----------------------------"
 
 # Clean up any existing clone
@@ -62,9 +86,9 @@ echo "✓ Repository cloned"
 echo ""
 
 #######################################
-# Step 2: Read Initial Commit ID
+# Step 3: Read Initial Commit ID
 #######################################
-echo "Step 2: Reading initial commit ID..."
+echo "Step 3: Reading initial commit ID..."
 echo "-------------------------------------"
 
 # Read the commit ID from file
@@ -85,9 +109,9 @@ git log --oneline -1 "$INITIAL_COMMIT"
 echo ""
 
 #######################################
-# Step 3: Reset to Initial Commit
+# Step 4: Reset to Initial Commit
 #######################################
-echo "Step 3: Resetting to initial commit..."
+echo "Step 4: Resetting to initial commit..."
 echo "---------------------------------------"
 
 git reset --hard "$INITIAL_COMMIT"
@@ -97,9 +121,9 @@ echo ""
 
 if [ "$MODE" == "update" ]; then
     #######################################
-    # Step 4: Process Configuration File (UPDATE MODE ONLY)
+    # Step 5: Process Configuration File (UPDATE MODE ONLY)
     #######################################
-    echo "Step 4: Processing configuration file..."
+    echo "Step 5: Processing configuration file..."
     echo "-----------------------------------------"
 
     # Check if target file exists
@@ -120,9 +144,9 @@ if [ "$MODE" == "update" ]; then
     echo ""
 
     #######################################
-    # Step 5: Commit Changes
+    # Step 6: Commit Changes
     #######################################
-    echo "Step 5: Committing changes..."
+    echo "Step 6: Committing changes..."
     echo "------------------------------"
 
     # Stage changes
@@ -144,18 +168,18 @@ if [ "$MODE" == "update" ]; then
     fi
 else
     #######################################
-    # Step 4: Commit Reset (RESET MODE)
+    # Step 5: Commit Reset (RESET MODE)
     #######################################
-    echo "Step 4: No changes needed - already at initial commit"
+    echo "Step 5: No changes needed - already at initial commit"
     echo "------------------------------------------------------"
     echo "✓ Repository is at initial state"
     echo ""
 fi
 
 #######################################
-# Step 5/6: Push Changes
+# Step 6/7: Push Changes
 #######################################
-STEP_NUM=$( [ "$MODE" == "update" ] && echo "6" || echo "5" )
+STEP_NUM=$( [ "$MODE" == "update" ] && echo "7" || echo "6" )
 echo "Step ${STEP_NUM}: Pushing changes..."
 echo "--------------------------"
 
@@ -170,9 +194,9 @@ echo "✓ Changes pushed to origin/$BRANCH_NAME"
 echo ""
 
 #######################################
-# Step 6/7: Hard Refresh ArgoCD Application
+# Step 7/8: Hard Refresh ArgoCD Application
 #######################################
-STEP_NUM=$( [ "$MODE" == "update" ] && echo "7" || echo "6" )
+STEP_NUM=$( [ "$MODE" == "update" ] && echo "8" || echo "7" )
 echo "Step ${STEP_NUM}: Refreshing ArgoCD backstage application..."
 echo "---------------------------------------------------"
 
